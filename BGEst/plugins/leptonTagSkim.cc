@@ -57,7 +57,7 @@
 // class declaration
 //
 
-// If the analyzer does not use TFileService, please remove
+// If the filter does not use TFileService, please remove
 // the template argument to the base class so the class inherits
 // from  edm::one::EDFilter<>
 // This will improve performance in multithreaded jobs.
@@ -299,10 +299,10 @@ bool leptonTagSkim<T>::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
       if(((fabs (electron.superCluster()->eta()) <= 1.479) && (fabs (((electron.vx() - pv.x()) * electron.py() - (electron.vy() - pv.y()) * electron.px()) / electron.pt()) < 0.05)) || ((fabs (electron.superCluster()->eta()) >  1.479) && (fabs (((electron.vx() - pv.x()) * electron.py() - (electron.vy() - pv.y()) * electron.px()) / electron.pt()) < 0.10))) {passD0Sel = true; if(auxPassIDCut) auxPassD0Cut = true;}
       if(((fabs (electron.superCluster()->eta()) <= 1.479) && (fabs ((electron.vz() - pv.z()) - ((electron.vx() - pv.x()) * electron.px() + (electron.vy() - pv.y()) * electron.py()) / electron.pt() * electron.pz() / electron.pt()) < 0.10)) || ((fabs (electron.superCluster()->eta()) >  1.479) && (fabs ((electron.vz() - pv.z()) - ((electron.vx() - pv.x()) * electron.px() + (electron.vy() - pv.y()) * electron.py()) / electron.pt() * electron.pz() / electron.pt()) < 0.20))) {passDzSel = true; if(auxPassD0Cut) auxPassDzCut = true;}
       
-      if(auxPassPtCut && auxPassEtaCut && auxPassIDCut && auxPassD0Cut && auxPassDzCut) passDzCut = true;
-      if(auxPassPtCut && auxPassEtaCut && auxPassIDCut && auxPassD0Cut) passD0Cut = true;
-      if(auxPassPtCut && auxPassEtaCut && auxPassIDCut) passIDCut = true;
-      if(auxPassPtCut && auxPassEtaCut) passEtaCut = true;
+      if(auxPassDzCut) passDzCut = true;
+      if(auxPassD0Cut) passD0Cut = true;
+      if(auxPassIDCut) passIDCut = true;
+      if(auxPassEtaCut) passEtaCut = true;
       if(auxPassPtCut) passPtCut = true;
           
       auxPassPtCut = false;
@@ -324,9 +324,9 @@ bool leptonTagSkim<T>::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
       if(muon.isTightMuon(pv)) {passIDSel = true; if(auxPassEtaCut) auxPassIDCut = true;}
       if(((muon.pfIsolationR04().sumChargedHadronPt + std::max(0.0,muon.pfIsolationR04().sumNeutralHadronEt + muon.pfIsolationR04().sumPhotonEt - 0.5 * muon.pfIsolationR04().sumPUPt)) / muon.pt()) < 0.15) {passPFIsoSel = true; if(auxPassIDCut) auxPassPFIsoCut = true;}
       
-      if(auxPassPtCut && auxPassEtaCut && auxPassIDCut && auxPassPFIsoCut) passPFIsoCut = true;
-      if(auxPassPtCut && auxPassEtaCut && auxPassIDCut) passIDCut = true;
-      if(auxPassPtCut && auxPassEtaCut) passEtaCut = true;
+      if(auxPassPFIsoCut) passPFIsoCut = true;
+      if(auxPassIDCut) passIDCut = true;
+      if(auxPassEtaCut) passEtaCut = true;
       if(auxPassPtCut) passPtCut = true;
           
       auxPassPtCut = false;
@@ -346,8 +346,8 @@ bool leptonTagSkim<T>::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
       if(abs(tau.eta()) < 2.1) {passEtaSel = true; if(auxPassPtCut) auxPassEtaCut = true;}
       if(passesDecayModeReconstruction(tau) && passesLightFlavorRejection(tau)) {passIDSel = true; if(auxPassEtaCut) auxPassIDCut = true;}
       
-      if(auxPassPtCut && auxPassEtaCut && auxPassIDCut) passIDCut = true;
-      if(auxPassPtCut && auxPassEtaCut) passEtaCut = true;
+      if(auxPassIDCut) passIDCut = true;
+      if(auxPassEtaCut) passEtaCut = true;
       if(auxPassPtCut) passPtCut = true;
           
       auxPassPtCut = false;

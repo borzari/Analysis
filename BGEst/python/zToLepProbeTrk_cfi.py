@@ -1,0 +1,40 @@
+import FWCore.ParameterSet.Config as cms
+
+zToElecProbeTrkFilter_ = cms.EDFilter ("zToElecProbeTrk",
+    vertices = cms.InputTag("offlineSlimmedPrimaryVertices",""),
+    electrons = cms.InputTag("slimmedElectrons",""),
+    muons = cms.InputTag("slimmedMuons",""),
+    taus = cms.InputTag("slimmedTaus",""),
+    tracks = cms.InputTag("isolatedTracks",""),
+    jets = cms.InputTag("slimmedJets",""),
+    triggersPAT = cms.InputTag('TriggerResults','','PAT'),
+    triggersHLT = cms.InputTag('TriggerResults','','HLT'),
+    HLTName = cms.string('HLT_Ele32_WPTight_Gsf_v'),
+    trigobjs = cms.InputTag('slimmedPatTrigger'),
+)
+
+zToMuonProbeTrkFilter_ = cms.EDFilter ("zToMuonProbeTrk",
+    vertices = cms.InputTag("offlineSlimmedPrimaryVertices",""),
+    electrons = cms.InputTag("slimmedElectrons",""),
+    muons = cms.InputTag("slimmedMuons",""),
+    taus = cms.InputTag("slimmedTaus",""),
+    tracks = cms.InputTag("isolatedTracks",""),
+    jets = cms.InputTag("slimmedJets",""),
+    triggersPAT = cms.InputTag('TriggerResults','','PAT'),
+    triggersHLT = cms.InputTag('TriggerResults','','HLT'),
+    HLTName = cms.string('HLT_IsoMu24_v'),
+    trigobjs = cms.InputTag('slimmedPatTrigger'),
+)
+
+zToTauProbeTrkFilter_ = cms.EDFilter ("zToTauProbeTrk",
+    vertices = cms.InputTag("offlineSlimmedPrimaryVertices",""),
+    electrons = cms.InputTag("slimmedElectrons",""),
+    muons = cms.InputTag("slimmedMuons",""),
+    taus = cms.InputTag("slimmedTaus",""),
+    tracks = cms.InputTag("isolatedTracks",""),
+    jets = cms.InputTag("slimmedJets",""),
+    triggersPAT = cms.InputTag('TriggerResults','','PAT'),
+    triggersHLT = cms.InputTag('TriggerResults','','HLT'),
+    HLTName = cms.string('HLT_IsoMu24_eta2p1_MediumDeepTauPFTauHPS20_eta2p1_SingleL1_v'),
+    trigobjs = cms.InputTag('slimmedPatTrigger'),
+)

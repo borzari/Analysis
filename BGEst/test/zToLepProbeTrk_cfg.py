@@ -1,5 +1,5 @@
 import FWCore.ParameterSet.Config as cms
-from Analysis.BGEst.leptonTagSkim_cfi import *
+from Analysis.BGEst.zToLepProbeTrk_cfi import *
 
 ###########################################################
 ##### Set up process #####
@@ -14,7 +14,7 @@ process.maxEvents = cms.untracked.PSet (
 )
 
 process.source = cms.Source ("PoolSource",
-    fileNames = cms.untracked.vstring ("root://cmsxrootd.fnal.gov//store/user/borzari/WtoLNu-4Jets_TuneCP5_13p6TeV_madgraphMLM-pythia8/Skimming_2022EE/240620_202923/0000/selected_1.root"),
+    fileNames = cms.untracked.vstring ("root://osg-se.sprace.org.br:1094//store/user/borzari/WtoLNu-4Jets_TuneCP5_13p6TeV_madgraphMLM-pythia8/Skimming_2022EE/240620_202923/0000/selected_1.root"),
 )
 
 lepton = 'electron'
@@ -32,13 +32,13 @@ process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_cff')
 from Configuration.AlCa.GlobalTag import GlobalTag
 process.GlobalTag = GlobalTag(process.GlobalTag, "130X_mcRun3_2022_realistic_postEE_v6", '')
 
-process.electronTagSkimFilter = electronTagSkimFilter_.clone()
-process.muonTagSkimFilter = muonTagSkimFilter_.clone()
-process.tauTagSkimFilter = tauTagSkimFilter_.clone()
+process.zToElecProbeTrkFilter = zToElecProbeTrkFilter_.clone()
+process.zToMuonProbeTrkFilter = zToMuonProbeTrkFilter_.clone()
+process.zToTauProbeTrkFilter = zToTauProbeTrkFilter_.clone()
 
-if lepton == 'electron': process.filterPath = cms.Path(process.electronTagSkimFilter)
-if lepton == 'muon': process.filterPath = cms.Path(process.muonTagSkimFilter)
-if lepton == 'tau': process.filterPath = cms.Path(process.tauTagSkimFilter)
+if lepton == 'electron': process.filterPath = cms.Path(process.zToElecProbeTrkFilter)
+if lepton == 'muon': process.filterPath = cms.Path(process.zToMuonProbeTrkFilter)
+if lepton == 'tau': process.filterPath = cms.Path(process.zToTauProbeTrkFilter)
 
 from Configuration.EventContent.EventContent_cff import MINIAODSIMEventContent
 process.EXODisappTrkSkimContent = MINIAODSIMEventContent.clone()
