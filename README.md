@@ -14,15 +14,15 @@ This has the BackgroundEstimation, StandardAnalysis and TriggerAnalysis selectio
       - Got number SS T&P pairs passing veto selection
    - Implemented ZtoMuProbeTrk
       - Compared working cuts with original analysis and everything is (almost) the same
-      - Had some issues with caloGeometry, but solved with using Run3 era in `zToLetProTrk_cfg.py`
+      - Had some issues with caloGeometry, but solved with using Run3 era in `zToLepProbeTrk_cfg.py`
 
 ## Ongoing for BackgroundEstimation
 
 - Compared 100k events for the ZtoMuProbeTrk with the original analysis and there is about 5 events of difference in the METFilters
-   - Under investigation, but seems to be one selection that is set as true in the original analysis
+   - Under investigation, but seems to be one selection that is set as `true` in the original analysis
 - Checked number of T&P pairs
    - They seem to match with original analysis
-      - Still need to plot and make a better comparison of them
+      - Still need to plot and make a more thorough comparison
    - I was selecting the wrong tags and probes and was also using WToLNu events to check this, which was misleading
 
 ## TODO for BackgroundEstimation
