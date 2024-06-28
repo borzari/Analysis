@@ -4,18 +4,31 @@ This has the BackgroundEstimation, StandardAnalysis and TriggerAnalysis selectio
 
 ## Done for BackgroundEstimation
 
-- Implemented all the leptons tag skims and compared with original
-- Implemented ZtoEleProbeTrk selection and compared with original
+- Charged leptons
+   - Implemented all the leptons tag skims and compared with original
+   - Implemented ZtoEleProbeTrk selection and compared with original
+   - Implemented Z mass and elec/track charge verification and veto selection in ZtoEleProbetrk
+      - Got number OS T&P pairs
+      - Got number SS T&P pairs
+      - Got number OS T&P pairs passing veto selection
+      - Got number SS T&P pairs passing veto selection
+   - Implemented ZtoMuProbeTrk
+      - Compared working cuts with original analysis and everything is (almost) the same
+      - Had some issues with caloGeometry, but solved with using Run3 era in `zToLetProTrk_cfg.py`
+
+## Ongoing for BackgroundEstimation
+
+- Compared 100k events for the ZtoMuProbeTrk with the original analysis and there is about 5 events of difference in the METFilters
+   - Under investigation, but seems to be one selection that is set as true in the original analysis
+- Checked number of T&P pairs
+   - They seem to match with original analysis
+      - Still need to plot and make a better comparison of them
+   - I was selecting the wrong tags and probes and was also using WToLNu events to check this, which was misleading
 
 ## TODO for BackgroundEstimation
 
 - Charged leptons
-   - Implement Z mass and elec/track charge verification and veto selection in ZtoEleProbetrk
-      - Get number OS T&P pairs
-      - Get number SS T&P pairs
-      - Get number OS T&P pairs passing veto selection
-      - Get number SS T&P pairs passing veto selection
-   - Implement muon and tau (e and mu) ZtoLepProbeTrk selections and compare with original
+   - Implement tau (e and mu) ZtoLepProbeTrk selections and compare with original
    - Implement leptonTagPt55 leptonTagPt55MetTrig selections and compare with original
    - Implement distinct layer signal regions
    - Determine Nctrl, Pveto, Poffline and Ptrigger for all leptons and nLayers (this point might be done using the original analysis repo)
@@ -59,6 +72,8 @@ This has the BackgroundEstimation, StandardAnalysis and TriggerAnalysis selectio
 
 ## TODO for TriggerAnalysis
 
+- Remove the muon pt cut to make the plots with the full muon pt range
+   - This might increase the size of trees, but should be manageable
 - Finish estimating uncertainties on problematic datasets of 2022
 - Implement method to extract trigger efficiency scale factors
 - Estimate uncertainty over all signal samples and select the best for AN

@@ -5,21 +5,27 @@ from Analysis.BGEst.zToLepProbeTrk_cfi import *
 ##### Set up process #####
 ###########################################################
 
-process = cms.Process ('MUONTAGSKIM')
+nEvents = 100000
+
+# lepton = 'electron'
+lepton = 'muon'
+# lepton = 'taue'
+# lepton = 'taum'
+
+from Configuration.Eras.Era_Run3_cff import Run3
+process = cms.Process ('MUONTAGSKIM', Run3)
 process.load ('FWCore.MessageService.MessageLogger_cfi')
-process.MessageLogger.cerr.FwkReport.reportEvery = 1000
+process.MessageLogger.cerr.FwkReport.reportEvery = int(nEvents/10)
 
 process.maxEvents = cms.untracked.PSet (
-    input = cms.untracked.int32 (10000)
+    input = cms.untracked.int32 (nEvents)
 )
 
 process.source = cms.Source ("PoolSource",
-    fileNames = cms.untracked.vstring ("root://osg-se.sprace.org.br:1094//store/user/borzari/WtoLNu-4Jets_TuneCP5_13p6TeV_madgraphMLM-pythia8/Skimming_2022EE/240620_202923/0000/selected_1.root"),
+    # fileNames = cms.untracked.vstring ("root://osg-se.sprace.org.br:1094//store/user/borzari/WtoLNu-4Jets_TuneCP5_13p6TeV_madgraphMLM-pythia8/Skimming_2022EE/240620_202923/0000/selected_1.root"),
+    fileNames = cms.untracked.vstring ("root://osg-se.sprace.org.br:1094//store/user/borzari/DYJetsToLL_M-50_TuneCP5_13p6TeV-madgraphMLM-pythia8/3Skimming_2022EE/240627_204809/0000/selected_1.root","root://osg-se.sprace.org.br:1094//store/user/borzari/DYJetsToLL_M-50_TuneCP5_13p6TeV-madgraphMLM-pythia8/3Skimming_2022EE/240627_204809/0000/selected_10.root","root://osg-se.sprace.org.br:1094//store/user/borzari/DYJetsToLL_M-50_TuneCP5_13p6TeV-madgraphMLM-pythia8/3Skimming_2022EE/240627_204809/0000/selected_100.root","root://osg-se.sprace.org.br:1094//store/user/borzari/DYJetsToLL_M-50_TuneCP5_13p6TeV-madgraphMLM-pythia8/3Skimming_2022EE/240627_204809/0000/selected_101.root","root://osg-se.sprace.org.br:1094//store/user/borzari/DYJetsToLL_M-50_TuneCP5_13p6TeV-madgraphMLM-pythia8/3Skimming_2022EE/240627_204809/0000/selected_102.root"),
+    # fileNames = cms.untracked.vstring ("root://osg-se.sprace.org.br:1094//store/user/borzari/DYJetsToLL_M-50_TuneCP5_13p6TeV-madgraphMLM-pythia8/2Skimming_2022EE/240526_160303/0000/skim_Skimming_10.root","root://osg-se.sprace.org.br:1094//store/user/borzari/DYJetsToLL_M-50_TuneCP5_13p6TeV-madgraphMLM-pythia8/2Skimming_2022EE/240526_160303/0000/skim_Skimming_100.root","root://osg-se.sprace.org.br:1094//store/user/borzari/DYJetsToLL_M-50_TuneCP5_13p6TeV-madgraphMLM-pythia8/2Skimming_2022EE/240526_160303/0000/skim_Skimming_101.root"), // Can't run over skims produced by original analysis code as it has custom types that don't exist here
 )
-
-lepton = 'electron'
-# lepton = 'muon'
-# lepton = 'tau'
 
 process.TFileService = cms.Service ('TFileService',
     fileName = cms.string (lepton + '_outputHistograms.root')
@@ -34,11 +40,13 @@ process.GlobalTag = GlobalTag(process.GlobalTag, "130X_mcRun3_2022_realistic_pos
 
 process.zToElecProbeTrkFilter = zToElecProbeTrkFilter_.clone()
 process.zToMuonProbeTrkFilter = zToMuonProbeTrkFilter_.clone()
-process.zToTauProbeTrkFilter = zToTauProbeTrkFilter_.clone()
+process.zToTauEleProbeTrkFilter = zToTauEleProbeTrkFilter_.clone()
+process.zToTauMuProbeTrkFilter = zToTauMuProbeTrkFilter_.clone()
 
 if lepton == 'electron': process.filterPath = cms.Path(process.zToElecProbeTrkFilter)
 if lepton == 'muon': process.filterPath = cms.Path(process.zToMuonProbeTrkFilter)
-if lepton == 'tau': process.filterPath = cms.Path(process.zToTauProbeTrkFilter)
+if lepton == 'taue': process.filterPath = cms.Path(process.zToTauEleProbeTrkFilter)
+if lepton == 'taum': process.filterPath = cms.Path(process.zToTauMuProbeTrkFilter)
 
 from Configuration.EventContent.EventContent_cff import MINIAODSIMEventContent
 process.EXODisappTrkSkimContent = MINIAODSIMEventContent.clone()
@@ -117,6 +125,15 @@ process.MINIAODSIMoutput = cms.OutputModule("PoolOutputModule",
         SelectEvents = cms.vstring('filterPath')
     ),
 )
+
+# process.CaloGeometryBuilder.SelectedCalos = cms.vstring(
+#     'HCAL',
+#     'ZDC',
+#     'EcalBarrel',
+#     'EcalEndcap',
+#     'EcalPreshower',
+#     'TOWER'
+# )
 
 process.MINIAODSIMoutput_step = cms.EndPath(process.MINIAODSIMoutput)
 
