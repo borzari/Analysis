@@ -25,12 +25,14 @@ This has the BackgroundEstimation, StandardAnalysis and TriggerAnalysis selectio
       - Had some issues with caloGeometry, but solved with using Run3 era in `zToLepProbeTrk_cfg.py`
       - Solved events difference; the METFilters needed to be updated; the implementation of the new filters was propagated to the lepton tag skims
       - Got the correct number of T&P pairs, plotted the number of pairs per event and it seems consistent
+      - Implemented tau (e and mu) ZtoLepProbeTrk transverse mass calculation
 
 ## Ongoing for BackgroundEstimation
 
 - Implementing tau (e and mu) ZtoLepProbeTrk selections
-   - Need to implement transverse mass calculation
    - Need to compare with original and check if it is consistent
+      - Number of T&P pairs is different when comparing with original
+      - Possibly because requirement for good inv mass of the pair is different, but need to be checked
 - Implementing a way to add leptons SFs to have the correct plots; most probably will rely on passing the .root files with the SFs for the distinct lepton cases
 
 ## TODO for BackgroundEstimation
