@@ -7,6 +7,7 @@ electronTagSkimFilter_ = cms.EDFilter ("electronTagSkim",
     triggersHLT = cms.InputTag('TriggerResults','','HLT'),
     HLTName = cms.string('HLT_Ele32_WPTight_Gsf_v'),
     trigobjs = cms.InputTag('slimmedPatTrigger'),
+    ecalBadCalibReducedMINIAODFilter = cms.InputTag('ecalBadCalibReducedMINIAODFilter'),
 )
 
 muonTagSkimFilter_ = cms.EDFilter ("muonTagSkim",
@@ -16,6 +17,7 @@ muonTagSkimFilter_ = cms.EDFilter ("muonTagSkim",
     triggersHLT = cms.InputTag('TriggerResults','','HLT'),
     HLTName = cms.string('HLT_IsoMu24_v'),
     trigobjs = cms.InputTag('slimmedPatTrigger'),
+    ecalBadCalibReducedMINIAODFilter = cms.InputTag('ecalBadCalibReducedMINIAODFilter'),
 )
 
 tauTagSkimFilter_ = cms.EDFilter ("tauTagSkim",
@@ -25,4 +27,5 @@ tauTagSkimFilter_ = cms.EDFilter ("tauTagSkim",
     triggersHLT = cms.InputTag('TriggerResults','','HLT'),
     HLTName = cms.string('HLT_IsoMu24_eta2p1_MediumDeepTauPFTauHPS20_eta2p1_SingleL1_v'),
     trigobjs = cms.InputTag('slimmedPatTrigger'),
+    ecalBadCalibReducedMINIAODFilter = cms.InputTag('ecalBadCalibReducedMINIAODFilter'),
 )

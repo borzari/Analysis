@@ -53,6 +53,8 @@
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "FWCore/ParameterSet/interface/ParameterSetDescription.h"
 #include "FWCore/PluginManager/interface/ModuleDef.h"
+
+#include "Analysis/Helper/interface/helperFunctions.h"
 //
 // class declaration
 //
@@ -69,10 +71,6 @@ public:
   ~leptonTagSkim() override;
 
   static void fillDescriptions(edm::ConfigurationDescriptions& descriptions);
-  bool isMatchedToTriggerObject (const edm::Event &, const edm::TriggerResults &, const T &, const std::vector<pat::TriggerObjectStandAlone> &, const std::string &, const std::string &, const double = 0.1);
-  bool passesDecayModeReconstruction (const pat::Tau &);
-  bool passesLightFlavorRejection (const pat::Tau &);
-
 
 private:
   bool filter(edm::Event&, const edm::EventSetup&) override;
@@ -85,25 +83,10 @@ private:
   edm::EDGetTokenT<edm::TriggerResults> triggersPATToken_;
   edm::EDGetTokenT<edm::TriggerResults> triggersHLTToken_;
   edm::EDGetTokenT<std::vector<pat::TriggerObjectStandAlone>> trigobjsToken_;
+  edm::EDGetTokenT<bool> ecalBadCalibFilterUpdateToken_;
   std::string HLTName_;
 
-  bool passHLTSel;
-  bool passMETFiltersSel;
-  bool passPtSel;
-  bool passEtaSel;
-  bool passIDSel;
-  bool passD0Sel;
-  bool passDzSel;
-  bool passPFIsoSel;
-
-  bool passHLTCut;
-  bool passMETFiltersCut;
-  bool passPtCut;
-  bool passEtaCut;
-  bool passIDCut;
-  bool passD0Cut;
-  bool passDzCut;
-  bool passPFIsoCut;
+  std::vector<std::string> commonCuts, electronCuts, muonCuts, tauCuts;
 
 };
 
@@ -124,45 +107,60 @@ leptonTagSkim<T>::leptonTagSkim(const edm::ParameterSet& iConfig)
       leptonsToken_(consumes<std::vector<T>>(iConfig.getParameter<edm::InputTag>("leptons"))),
       triggersPATToken_(consumes<edm::TriggerResults>(iConfig.getParameter<edm::InputTag>("triggersPAT"))),
       triggersHLTToken_(consumes<edm::TriggerResults>(iConfig.getParameter<edm::InputTag>("triggersHLT"))),
-      trigobjsToken_(consumes<std::vector<pat::TriggerObjectStandAlone>>(iConfig.getParameter<edm::InputTag>("trigobjs"))) {
+      trigobjsToken_(consumes<std::vector<pat::TriggerObjectStandAlone>>(iConfig.getParameter<edm::InputTag>("trigobjs"))),
+      ecalBadCalibFilterUpdateToken_(consumes<bool>(iConfig.getParameter<edm::InputTag>("ecalBadCalibReducedMINIAODFilter"))) {
   //now do what ever initialization is needed
 
   HLTName_ = iConfig.getParameter<std::string>("HLTName");
 
-  int nBins = 0;
-  double maxRange = 0.0;
-  std::string ptCut = "";
-  std::string idCut = "";
+  commonCuts = {
+    "Total",
+    HLTName_,
+    "METFilters",
+    "passecalBadCalibFilterUpdate"
+  };
 
-  if(std::is_same<T, pat::Electron>::value){nBins = 8; maxRange = 7.5; ptCut = "pt > 32"; idCut = "passesVID_tightID (ID + iso)";}
-  if(std::is_same<T, pat::Muon>::value){nBins = 7; maxRange = 6.5; ptCut = "pt > 26"; idCut = "isTightMuonWRTVtx";}
-  if(std::is_same<T, pat::Tau>::value){nBins = 6; maxRange = 5.5; ptCut = "pt > 50"; idCut = "passesDecayModeReconstruction && passesLightFlavorRejection";}
+  electronCuts = {
+    "electron pt > 32 GeV",
+    "electron fabs(#eta) < 2.1",
+    "electron passesVID_tightID (ID + iso)",
+    "electron |d0| < 0.05, 0.10 (EB, EE)",
+    "electron |dz| < 0.10, 0.20 (EB, EE)"
+  };
+
+  muonCuts = {
+    "muon pt > 26 GeV",
+    "muon fabs(#eta) < 2.1",
+    "muon isTightMuonWRTVtx",
+    "muon #Delta#beta-corrected rel. iso. < 0.15"
+  };
+
+  tauCuts = {
+    "tau pt > 50 GeV",
+    "tau fabs(#eta) < 2.1",
+    "tau passesDecayModeReconstruction && passesLightFlavorRejection"
+  };
+
+  int nBins = int(commonCuts.size());
+  double maxRange = 0.0;
+  std::vector<std::string> lepCuts;
+
+  if(std::is_same<T, pat::Electron>::value){nBins = nBins + int(electronCuts.size()); maxRange = double(nBins) - 0.5; lepCuts = electronCuts;}
+  if(std::is_same<T, pat::Muon>::value){nBins = nBins + int(muonCuts.size()); maxRange = double(nBins) - 0.5; lepCuts = muonCuts;}
+  if(std::is_same<T, pat::Tau>::value){nBins = nBins + int(tauCuts.size()); maxRange = double(nBins) - 0.5; lepCuts = tauCuts;}
 
   oneDHists_["cutflow"] = fs_->make<TH1D>("cutflow", "", nBins, -0.5, maxRange);
   oneDHists_["selection"] = fs_->make<TH1D>("selection", "", nBins, -0.5, maxRange);
 
-  oneDHists_.at("cutflow")->GetXaxis()->SetBinLabel(1,"Total");
-  oneDHists_.at("cutflow")->GetXaxis()->SetBinLabel(2,HLTName_.c_str());
-  oneDHists_.at("cutflow")->GetXaxis()->SetBinLabel(3,"METFilters");
-  oneDHists_.at("cutflow")->GetXaxis()->SetBinLabel(4,ptCut.c_str());
-  oneDHists_.at("cutflow")->GetXaxis()->SetBinLabel(5,"fabs(#eta) < 2.1");
-  oneDHists_.at("cutflow")->GetXaxis()->SetBinLabel(6,idCut.c_str());
-  if(std::is_same<T, pat::Muon>::value) oneDHists_.at("cutflow")->GetXaxis()->SetBinLabel(7,"#Delta#beta-corrected rel. iso. < 0.15");
-  if(std::is_same<T, pat::Electron>::value){
-    oneDHists_.at("cutflow")->GetXaxis()->SetBinLabel(7,"|d0| < 0.05, 0.10 (EB, EE)");
-    oneDHists_.at("cutflow")->GetXaxis()->SetBinLabel(8,"|dz| < 0.10, 0.20 (EB, EE)");
-  }
-
-  oneDHists_.at("selection")->GetXaxis()->SetBinLabel(1,"Total");
-  oneDHists_.at("selection")->GetXaxis()->SetBinLabel(2,HLTName_.c_str());
-  oneDHists_.at("selection")->GetXaxis()->SetBinLabel(3,"METFilters");
-  oneDHists_.at("selection")->GetXaxis()->SetBinLabel(4,ptCut.c_str());
-  oneDHists_.at("selection")->GetXaxis()->SetBinLabel(5,"fabs(#eta) < 2.1");
-  oneDHists_.at("selection")->GetXaxis()->SetBinLabel(6,idCut.c_str());
-  if(std::is_same<T, pat::Muon>::value) oneDHists_.at("selection")->GetXaxis()->SetBinLabel(7,"#Delta#beta-corrected rel. iso. < 0.15");
-  if(std::is_same<T, pat::Electron>::value){
-    oneDHists_.at("selection")->GetXaxis()->SetBinLabel(7,"|d0| < 0.05, 0.10 (EB, EE)");
-    oneDHists_.at("selection")->GetXaxis()->SetBinLabel(8,"|dz| < 0.10, 0.20 (EB, EE)");
+  for(int i = 1; i <= int(commonCuts.size() + lepCuts.size()); i++){
+    if(i <= int(commonCuts.size())) {
+      oneDHists_.at("cutflow")->GetXaxis()->SetBinLabel(i,commonCuts[i-1].c_str());
+      oneDHists_.at("selection")->GetXaxis()->SetBinLabel(i,commonCuts[i-1].c_str());
+    }
+    if(i > int(commonCuts.size())) {
+      oneDHists_.at("cutflow")->GetXaxis()->SetBinLabel(i,lepCuts[i-1-int(commonCuts.size())].c_str());
+      oneDHists_.at("selection")->GetXaxis()->SetBinLabel(i,lepCuts[i-1-int(commonCuts.size())].c_str());
+    }
   }
 
 }
@@ -201,36 +199,12 @@ template<class T>
 bool leptonTagSkim<T>::filter(edm::Event& iEvent, const edm::EventSetup& iSetup) {
   using namespace edm;
 
-  passHLTSel = false;
-  passMETFiltersSel = false;
-  passPtSel = false;
-  passEtaSel = false;
-  passIDSel = false;
-  passD0Sel = false;
-  passDzSel = false;
-  passPFIsoSel = false;
+  std::vector<bool> passSel;
+  std::vector<bool> passCut;
 
-  passHLTCut = false;
-  passMETFiltersCut = false;
-  passPtCut = false;
-  passEtaCut = false;
-  passIDCut = false;
-  passD0Cut = false;
-  passDzCut = false;
-  passPFIsoCut = false;
+  for(int j = 0; j < (int(commonCuts.size()) - 1); ++j) {passSel.push_back(false); passCut.push_back(false);}
 
   bool isGood = false;
-
-  int pass_HLT = 0;
-
-  Int_t pass_Flag_goodVertices = 0;
-  Int_t pass_Flag_globalTightHalo2016Filter = 0;
-  Int_t pass_Flag_HBHENoiseFilter = 0;
-  Int_t pass_Flag_HBHENoiseIsoFilter = 0;
-  Int_t pass_Flag_EcalDeadCellTriggerPrimitiveFilter = 0;
-  Int_t pass_Flag_BadPFMuonFilter = 0;
-  Int_t pass_Flag_BadChargedCandidateFilter = 0;
-  Int_t pass_Flag_ecalBadCalibFilter = 0;
 
   edm::Handle<std::vector<pat::Electron>> electrons;
   if(std::is_same<T, pat::Electron>::value) iEvent.getByToken(leptonsToken_, electrons);  
@@ -240,6 +214,9 @@ bool leptonTagSkim<T>::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
 
   edm::Handle<std::vector<pat::Tau>> taus;
   if(std::is_same<T, pat::Tau>::value) iEvent.getByToken(leptonsToken_, taus);
+
+  edm::Handle<bool> passecalBadCalibFilterUpdate;
+  iEvent.getByToken(ecalBadCalibFilterUpdateToken_, passecalBadCalibFilterUpdate);
 
   oneDHists_.at("selection")->Fill(0);
   oneDHists_.at("cutflow")->Fill(0);
@@ -253,169 +230,137 @@ bool leptonTagSkim<T>::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
   edm::Handle<std::vector<pat::TriggerObjectStandAlone> > triggerObjs;
   iEvent.getByToken(trigobjsToken_, triggerObjs);
 
-  const edm::TriggerNames &allTriggerNamesHLT = iEvent.triggerNames(*triggerBitsHLT);
+  if(helperFunctions::passHLTPath(iEvent,triggerBitsHLT,HLTName_)) {passSel[0] = true; passCut[0] = true;}
 
-  for(unsigned i = 0; i < allTriggerNamesHLT.size(); i++) {
-    std::string thisName = allTriggerNamesHLT.triggerName(i);
-    if (thisName.find(HLTName_) == 0) pass_HLT = triggerBitsHLT->accept(i);
-  }
+  if(helperFunctions::passMETFilters(iEvent,triggerBitsPAT)) {passSel[1] = true; if(passCut[0]) passCut[1] = true;}
 
-  if(pass_HLT == 1) {passHLTSel = true; passHLTCut = true;}
-
-  const edm::TriggerNames &allTriggerNamesPAT = iEvent.triggerNames(*triggerBitsPAT);
-
-  for(unsigned i = 0; i < allTriggerNamesPAT.size(); i++) {
-    std::string thisName = allTriggerNamesPAT.triggerName(i);
-    if (thisName.find("Flag_goodVertices") == 0) pass_Flag_goodVertices = triggerBitsPAT->accept(i);
-    if (thisName.find("Flag_globalTightHalo2016Filter") == 0) pass_Flag_globalTightHalo2016Filter = triggerBitsPAT->accept(i);
-    if (thisName.find("Flag_HBHENoiseFilter") == 0) pass_Flag_HBHENoiseFilter = triggerBitsPAT->accept(i);
-    if (thisName.find("Flag_HBHENoiseIsoFilter") == 0) pass_Flag_HBHENoiseIsoFilter = triggerBitsPAT->accept(i);
-    if (thisName.find("Flag_EcalDeadCellTriggerPrimitiveFilter") == 0) pass_Flag_EcalDeadCellTriggerPrimitiveFilter = triggerBitsPAT->accept(i);
-    if (thisName.find("Flag_BadPFMuonFilter") == 0) pass_Flag_BadPFMuonFilter = triggerBitsPAT->accept(i);
-    if (thisName.find("Flag_BadChargedCandidateFilter") == 0) pass_Flag_BadChargedCandidateFilter = triggerBitsPAT->accept(i);
-    if (thisName.find("Flag_ecalBadCalibFilter") == 0) pass_Flag_ecalBadCalibFilter = triggerBitsPAT->accept(i);
-  }
-
-  if(pass_Flag_goodVertices == 1 && pass_Flag_globalTightHalo2016Filter == 1 && pass_Flag_HBHENoiseFilter == 1 && pass_Flag_HBHENoiseIsoFilter == 1 && pass_Flag_EcalDeadCellTriggerPrimitiveFilter == 1 && pass_Flag_BadPFMuonFilter == 1 && pass_Flag_BadChargedCandidateFilter == 1 && pass_Flag_ecalBadCalibFilter == 1) {passMETFiltersSel = true; if(passHLTCut) passMETFiltersCut = true;}
+  if(*passecalBadCalibFilterUpdate) {passSel[2] = true; if(passCut[1]) passCut[2] = true;}
 
   edm::Handle<std::vector<reco::Vertex> > vertices;
   iEvent.getByToken(verticesToken_, vertices);
   const reco::Vertex &pv = vertices->at(0);
 
-  bool auxPassPtCut = false;
-  bool auxPassEtaCut = false;
-  bool auxPassIDCut = false;
-  bool auxPassD0Cut = false;
-  bool auxPassDzCut = false;
-  bool auxPassPFIsoCut = false;
-  
+  std::vector<bool> auxPassCut;
+
   if(std::is_same<T, pat::Electron>::value){
+
+    for(int j = 0; j < int(electronCuts.size()); ++j) {passSel.push_back(false); passCut.push_back(false); auxPassCut.push_back(false);}
+
+    int startElecIdx = int(commonCuts.size()) - 1;
     
     for (const auto& electron : *electrons) {
       
-      if(electron.pt() > 32.) {passPtSel = true; if(passMETFiltersCut) auxPassPtCut = true;}
-      if(abs(electron.eta()) < 2.1) {passEtaSel = true; if(auxPassPtCut) auxPassEtaCut = true;}
-      if(electron.electronID("cutBasedElectronID-RunIIIWinter22-V1-tight")) {passIDSel = true; if(auxPassEtaCut) auxPassIDCut = true;}
-      if(((fabs (electron.superCluster()->eta()) <= 1.479) && (fabs (((electron.vx() - pv.x()) * electron.py() - (electron.vy() - pv.y()) * electron.px()) / electron.pt()) < 0.05)) || ((fabs (electron.superCluster()->eta()) >  1.479) && (fabs (((electron.vx() - pv.x()) * electron.py() - (electron.vy() - pv.y()) * electron.px()) / electron.pt()) < 0.10))) {passD0Sel = true; if(auxPassIDCut) auxPassD0Cut = true;}
-      if(((fabs (electron.superCluster()->eta()) <= 1.479) && (fabs ((electron.vz() - pv.z()) - ((electron.vx() - pv.x()) * electron.px() + (electron.vy() - pv.y()) * electron.py()) / electron.pt() * electron.pz() / electron.pt()) < 0.10)) || ((fabs (electron.superCluster()->eta()) >  1.479) && (fabs ((electron.vz() - pv.z()) - ((electron.vx() - pv.x()) * electron.px() + (electron.vy() - pv.y()) * electron.py()) / electron.pt() * electron.pz() / electron.pt()) < 0.20))) {passDzSel = true; if(auxPassD0Cut) auxPassDzCut = true;}
+      int cutIdxInc = 0;
+
+      if(electron.pt() > 32.)
+        {passSel[startElecIdx+cutIdxInc] = true; if(passCut[startElecIdx-1]) auxPassCut[cutIdxInc] = true;}
+
+      ++cutIdxInc;
+
+      if(abs(electron.eta()) < 2.1)
+        {passSel[startElecIdx+cutIdxInc] = true; if(auxPassCut[cutIdxInc-1]) auxPassCut[cutIdxInc] = true;}
+
+      ++cutIdxInc;
+
+      if(electron.electronID("cutBasedElectronID-RunIIIWinter22-V1-tight"))
+        {passSel[startElecIdx+cutIdxInc] = true; if(auxPassCut[cutIdxInc-1]) auxPassCut[cutIdxInc] = true;}
+
+      ++cutIdxInc;
+
+      if(helperFunctions::elecD0(electron, pv))
+        {passSel[startElecIdx+cutIdxInc] = true; if(auxPassCut[cutIdxInc-1]) auxPassCut[cutIdxInc] = true;}
+
+      ++cutIdxInc;
+
+      if(helperFunctions::elecDZ(electron, pv))
+        {passSel[startElecIdx+cutIdxInc] = true; if(auxPassCut[cutIdxInc-1]) auxPassCut[cutIdxInc] = true;}
       
-      if(auxPassDzCut) passDzCut = true;
-      if(auxPassD0Cut) passD0Cut = true;
-      if(auxPassIDCut) passIDCut = true;
-      if(auxPassEtaCut) passEtaCut = true;
-      if(auxPassPtCut) passPtCut = true;
-          
-      auxPassPtCut = false;
-      auxPassEtaCut = false;
-      auxPassIDCut = false;
-      auxPassD0Cut = false;
-      auxPassDzCut = false;
-        
+      for(int j = 0; j < int(auxPassCut.size()); ++j){
+        if(auxPassCut[j]) passCut[j+int(commonCuts.size())-1] = true;
+        auxPassCut[j] = false;
+      }
+
     }
   
   }
 
   if(std::is_same<T, pat::Muon>::value){
+
+    for(int j = 0; j < int(muonCuts.size()); ++j) {passSel.push_back(false); passCut.push_back(false); auxPassCut.push_back(false);}
+
+    int startMuonIdx = int(commonCuts.size()) - 1;
     
     for (const auto& muon : *muons) {
       
-      if(muon.pt() > 26.) {passPtSel = true; if(passMETFiltersCut) auxPassPtCut = true;}
-      if(abs(muon.eta()) < 2.1) {passEtaSel = true; if(auxPassPtCut) auxPassEtaCut = true;}
-      if(muon.isTightMuon(pv)) {passIDSel = true; if(auxPassEtaCut) auxPassIDCut = true;}
-      if(((muon.pfIsolationR04().sumChargedHadronPt + std::max(0.0,muon.pfIsolationR04().sumNeutralHadronEt + muon.pfIsolationR04().sumPhotonEt - 0.5 * muon.pfIsolationR04().sumPUPt)) / muon.pt()) < 0.15) {passPFIsoSel = true; if(auxPassIDCut) auxPassPFIsoCut = true;}
+      int cutIdxInc = 0;
       
-      if(auxPassPFIsoCut) passPFIsoCut = true;
-      if(auxPassIDCut) passIDCut = true;
-      if(auxPassEtaCut) passEtaCut = true;
-      if(auxPassPtCut) passPtCut = true;
-          
-      auxPassPtCut = false;
-      auxPassEtaCut = false;
-      auxPassIDCut = false;
-      auxPassPFIsoCut = false;
+      if(muon.pt() > 26.)
+        {passSel[startMuonIdx+cutIdxInc] = true; if(passCut[startMuonIdx-1]) auxPassCut[cutIdxInc] = true;}
+
+      ++cutIdxInc;
+
+      if(abs(muon.eta()) < 2.1)
+        {passSel[startMuonIdx+cutIdxInc] = true; if(auxPassCut[cutIdxInc-1]) auxPassCut[cutIdxInc] = true;}
+
+      ++cutIdxInc;
+
+      if(muon.isTightMuon(pv))
+        {passSel[startMuonIdx+cutIdxInc] = true; if(auxPassCut[cutIdxInc-1]) auxPassCut[cutIdxInc] = true;}
+
+      ++cutIdxInc;
+
+      if(helperFunctions::muonIso(muon) < 0.15)
+        {passSel[startMuonIdx+cutIdxInc] = true; if(auxPassCut[cutIdxInc-1]) auxPassCut[cutIdxInc] = true;}
+      
+      for(int j = 0; j < int(auxPassCut.size()); ++j){
+        if(auxPassCut[j]) passCut[j+int(commonCuts.size())-1] = true;
+        auxPassCut[j] = false;
+      }
         
     }
   
   }
 
   if(std::is_same<T, pat::Tau>::value){
+
+    for(int j = 0; j < int(tauCuts.size()); ++j) {passSel.push_back(false); passCut.push_back(false); auxPassCut.push_back(false);}
+
+    int startTauIdx = int(commonCuts.size()) - 1;
     
     for (const auto& tau : *taus) {
       
-      if(tau.pt() > 50.) {passPtSel = true; if(passMETFiltersCut) auxPassPtCut = true;}
-      if(abs(tau.eta()) < 2.1) {passEtaSel = true; if(auxPassPtCut) auxPassEtaCut = true;}
-      if(passesDecayModeReconstruction(tau) && passesLightFlavorRejection(tau)) {passIDSel = true; if(auxPassEtaCut) auxPassIDCut = true;}
+      int cutIdxInc = 0;
+
+      if(tau.pt() > 50.)
+        {passSel[startTauIdx+cutIdxInc] = true; if(passCut[startTauIdx-1]) auxPassCut[cutIdxInc] = true;}
+
+      ++cutIdxInc;
+
+      if(abs(tau.eta()) < 2.1)
+        {passSel[startTauIdx+cutIdxInc] = true; if(auxPassCut[cutIdxInc-1]) auxPassCut[cutIdxInc] = true;}
+
+      ++cutIdxInc;
       
-      if(auxPassIDCut) passIDCut = true;
-      if(auxPassEtaCut) passEtaCut = true;
-      if(auxPassPtCut) passPtCut = true;
-          
-      auxPassPtCut = false;
-      auxPassEtaCut = false;
-      auxPassIDCut = false;
+      if(helperFunctions::passesDecayModeReconstruction(tau) && helperFunctions::passesLightFlavorRejection(tau))
+        {passSel[startTauIdx+cutIdxInc] = true; if(auxPassCut[cutIdxInc-1]) auxPassCut[cutIdxInc] = true;}
+
+      for(int j = 0; j < int(auxPassCut.size()); ++j){
+        if(auxPassCut[j]) passCut[j+int(commonCuts.size())-1] = true;
+        auxPassCut[j] = false;
+      }
         
     }
   
   }
 
-  if(passHLTSel) oneDHists_.at("selection")->Fill(1);
-  if(passMETFiltersSel) oneDHists_.at("selection")->Fill(2);
-  if(passPtSel) oneDHists_.at("selection")->Fill(3);
-  if(passEtaSel) oneDHists_.at("selection")->Fill(4);
-  if(passIDSel) oneDHists_.at("selection")->Fill(5);
-  if(std::is_same<T, pat::Muon>::value){if(passPFIsoSel) oneDHists_.at("selection")->Fill(6);}
-  if(std::is_same<T, pat::Electron>::value){
-    if(passD0Sel) oneDHists_.at("selection")->Fill(6);
-    if(passDzSel) oneDHists_.at("selection")->Fill(7);
-  }
-
-  if(passHLTCut) oneDHists_.at("cutflow")->Fill(1);
-  if(passMETFiltersCut) oneDHists_.at("cutflow")->Fill(2);
-  if(passPtCut) oneDHists_.at("cutflow")->Fill(3);
-  if(passEtaCut) oneDHists_.at("cutflow")->Fill(4);
-  if(passIDCut) {oneDHists_.at("cutflow")->Fill(5); if(std::is_same<T, pat::Tau>::value) isGood = true;}
-  if(std::is_same<T, pat::Muon>::value){if(passPFIsoCut) {oneDHists_.at("cutflow")->Fill(6); isGood = true;}}
-  if(std::is_same<T, pat::Electron>::value){
-    if(passD0Cut) oneDHists_.at("cutflow")->Fill(6);
-    if(passDzCut) {oneDHists_.at("cutflow")->Fill(7); isGood = true;}
+  for(int i = 1; i <= int(passSel.size()); i++){
+    if(passSel[i-1]) oneDHists_.at("selection")->Fill(i);
+    if(passCut[i-1]) oneDHists_.at("cutflow")->Fill(i);
+    if(i == int(passSel.size()) && passCut[i-1]) isGood = true;
   }
 
   return isGood;
 }
-
-template<class T>
-bool leptonTagSkim<T>::isMatchedToTriggerObject (const edm::Event &event, const edm::TriggerResults &triggers, const T &obj, const std::vector<pat::TriggerObjectStandAlone> &trigObjs, const std::string &collection, const std::string &filter, const double dR)
-{
-  if(collection == "") return false;
-  for(auto trigObj : trigObjs) {
-    trigObj.unpackNamesAndLabels(event, triggers);
-    if(trigObj.collection() != collection) continue;
-    if(filter != "") {
-      bool flag = false;
-      for(const auto &filterLabel : trigObj.filterLabels ())
-        if(filterLabel == filter) {
-          flag = true;
-          break;
-        }
-      if (!flag) continue;
-    }
-    if(filter == "hltTrk50Filter") std::cout << trigObj.eta() << std::endl;
-    if(deltaR (obj, trigObj) > dR) continue;
-    return true;
-  }
-  return false;
-}
-
-template<class T>
-bool leptonTagSkim<T>::passesDecayModeReconstruction (const pat::Tau &tau){
-  return (tau.tauID("decayModeFindingNewDMs") && (tau.tauID("byLooseCombinedIsolationDeltaBetaCorr3Hits") || (tau.tauID("chargedIsoPtSumdR03")+std::max(0.,tau.tauID("neutralIsoPtSumdR03")-0.072*tau.tauID("puCorrPtSum"))<2.5) || tau.tauID("byVVVLooseDeepTau2017v2p1VSjet") || tau.tauID("byVVVLooseDeepTau2018v2p5VSjet")));
-}
-
-template<class T>
-bool leptonTagSkim<T>::passesLightFlavorRejection (const pat::Tau &tau){
-  return (tau.tauID("byVVVLooseDeepTau2017v2p1VSe") || tau.tauID("byVVVLooseDeepTau2018v2p5VSe")) && (tau.tauID("byVLooseDeepTau2017v2p1VSmu") || tau.tauID("byVLooseDeepTau2018v2p5VSmu"));
-}
-
 
 // ------------ method fills 'descriptions' with the allowed parameters for the module  ------------
 template<class T>
@@ -429,6 +374,7 @@ void leptonTagSkim<T>::fillDescriptions(edm::ConfigurationDescriptions& descript
   desc.add<edm::InputTag>("triggersHLT", edm::InputTag("TriggerResults","","HLT"));
   desc.add<std::string>("HLTName", std::string("placeholderHLT"));
   desc.add<edm::InputTag>("trigobjs", edm::InputTag("slimmedPatTrigger"));
+  desc.add<edm::InputTag>("ecalBadCalibReducedMINIAODFilter", edm::InputTag("ecalBadCalibReducedMINIAODFilter"));
 
   descriptions.addWithDefaultLabel(desc);
 

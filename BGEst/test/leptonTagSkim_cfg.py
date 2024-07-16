@@ -5,24 +5,27 @@ from Analysis.BGEst.leptonTagSkim_cfi import *
 ##### Set up process #####
 ###########################################################
 
-process = cms.Process ('MUONTAGSKIM')
-process.load ('FWCore.MessageService.MessageLogger_cfi')
-process.MessageLogger.cerr.FwkReport.reportEvery = 1000
-
-process.maxEvents = cms.untracked.PSet (
-    input = cms.untracked.int32 (10000)
-)
-
-process.source = cms.Source ("PoolSource",
-    fileNames = cms.untracked.vstring ("root://cmsxrootd.fnal.gov//store/user/borzari/WtoLNu-4Jets_TuneCP5_13p6TeV_madgraphMLM-pythia8/Skimming_2022EE/240620_202923/0000/selected_1.root"),
-)
+nEvents = 100000
 
 lepton = 'electron'
 # lepton = 'muon'
 # lepton = 'tau'
 
+from Configuration.Eras.Era_Run3_cff import Run3
+process = cms.Process ('LEPTAGSKIM', Run3)
+process.load ('FWCore.MessageService.MessageLogger_cfi')
+process.MessageLogger.cerr.FwkReport.reportEvery = int(nEvents/10)
+
+process.maxEvents = cms.untracked.PSet (
+    input = cms.untracked.int32 (nEvents)
+)
+
+process.source = cms.Source ("PoolSource",
+    fileNames = cms.untracked.vstring ("root://osg-se.sprace.org.br:1094//store/user/borzari/DYJetsToLL_M-50_TuneCP5_13p6TeV-madgraphMLM-pythia8/3Skimming_2022EE/240627_204809/0000/selected_1.root","root://osg-se.sprace.org.br:1094//store/user/borzari/DYJetsToLL_M-50_TuneCP5_13p6TeV-madgraphMLM-pythia8/3Skimming_2022EE/240627_204809/0000/selected_10.root","root://osg-se.sprace.org.br:1094//store/user/borzari/DYJetsToLL_M-50_TuneCP5_13p6TeV-madgraphMLM-pythia8/3Skimming_2022EE/240627_204809/0000/selected_100.root","root://osg-se.sprace.org.br:1094//store/user/borzari/DYJetsToLL_M-50_TuneCP5_13p6TeV-madgraphMLM-pythia8/3Skimming_2022EE/240627_204809/0000/selected_101.root","root://osg-se.sprace.org.br:1094//store/user/borzari/DYJetsToLL_M-50_TuneCP5_13p6TeV-madgraphMLM-pythia8/3Skimming_2022EE/240627_204809/0000/selected_102.root"),
+)
+
 process.TFileService = cms.Service ('TFileService',
-    fileName = cms.string (lepton + '_outputHistograms.root')
+    fileName = cms.string (lepton + '_lepTagSkim_outputHistograms.root')
 )
 
 process.options.SkipEvent = cms.untracked.vstring('ProductNotFound')
@@ -55,7 +58,7 @@ process.MINIAODSIMoutput = cms.OutputModule("PoolOutputModule",
     dropMetaData = cms.untracked.string('ALL'),
     eventAutoFlushCompressedSize = cms.untracked.int32(-900),
     fastCloning = cms.untracked.bool(False),
-    fileName = cms.untracked.string('file:' + lepton + '_selected.root'),
+    fileName = cms.untracked.string('file:' + lepton + '_lepTagSkim_selected.root'),
     outputCommands = process.EXODisappTrkSkimContent.outputCommands,
     overrideBranchesSplitLevel = cms.untracked.VPSet(
         cms.untracked.PSet(
@@ -120,5 +123,17 @@ process.MINIAODSIMoutput = cms.OutputModule("PoolOutputModule",
 
 process.MINIAODSIMoutput_step = cms.EndPath(process.MINIAODSIMoutput)
 
-process.schedule = cms.Schedule(process.filterPath,process.MINIAODSIMoutput_step)
+# Recommended by https://twiki.cern.ch/twiki/bin/view/CMS/MissingETOptionalFiltersRun2#Run_3_recommendations
+process.load('RecoMET.METFilters.ecalBadCalibFilter_cfi')
+process.ecalBadCalibReducedMINIAODFilter = cms.EDFilter(
+  "EcalBadCalibFilter",
+  EcalRecHitSource = cms.InputTag("reducedEgamma:reducedEBRecHits"),
+  ecalMinEt        = cms.double(50.),
+  baddetEcal    = cms.vuint32([838871812]), # This is the only badly calibrated crystal in 2022 and 2023
+  taggingMode = cms.bool(True),
+  debug = cms.bool(False)
+)
+process.passecalBadCalibFilterUpdatePath = cms.Path (process.ecalBadCalibReducedMINIAODFilter)
+
+process.schedule = cms.Schedule(process.passecalBadCalibFilterUpdatePath,process.filterPath,process.MINIAODSIMoutput_step)
 
