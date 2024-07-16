@@ -2,6 +2,14 @@
 
 This has the BackgroundEstimation, StandardAnalysis and TriggerAnalysis selections from the DisappTrks analysis for Run3. It will have all the needed corrections, histograms and possibly trees to make further needed selections. It also saves the EDM files, given that if new variables from the MiniAOD are needed, they can be easily accessed.
 
+## HelperFunctions
+
+- Implemented a `helperFunctions` class to clean the plugins and to only have to define the distinct functions once. Mostly used for lengthy calculations and procedures
+   - It helps to implement other event selections
+   - It helps on the overall organization of the code
+   - It helps when needing to apply changes to the selection
+      - Might find a better way to make explicit changes to the methods if needed
+
 ## Done for BackgroundEstimation
 
 - Charged leptons
@@ -15,20 +23,19 @@ This has the BackgroundEstimation, StandardAnalysis and TriggerAnalysis selectio
    - Implemented ZtoMuProbeTrk
       - Compared working cuts with original analysis and everything is (almost) the same
       - Had some issues with caloGeometry, but solved with using Run3 era in `zToLepProbeTrk_cfg.py`
+      - Solved events difference; the METFilters needed to be updated; the implementation of the new filters was propagated to the lepton tag skims
+      - Got the correct number of T&P pairs, plotted the number of pairs per event and it seems consistent
 
 ## Ongoing for BackgroundEstimation
 
-- Compared 100k events for the ZtoMuProbeTrk with the original analysis and there is about 5 events of difference in the METFilters
-   - Under investigation, but seems to be one selection that is set as `true` in the original analysis
-- Checked number of T&P pairs
-   - They seem to match with original analysis
-      - Still need to plot and make a more thorough comparison
-   - I was selecting the wrong tags and probes and was also using WToLNu events to check this, which was misleading
+- Implementing tau (e and mu) ZtoLepProbeTrk selections
+   - Need to implement transverse mass calculation
+   - Need to compare with original and check if it is consistent
+- Implementing a way to add leptons SFs to have the correct plots; most probably will rely on passing the .root files with the SFs for the distinct lepton cases
 
 ## TODO for BackgroundEstimation
 
 - Charged leptons
-   - Implement tau (e and mu) ZtoLepProbeTrk selections and compare with original
    - Implement leptonTagPt55 leptonTagPt55MetTrig selections and compare with original
    - Implement distinct layer signal regions
    - Determine Nctrl, Pveto, Poffline and Ptrigger for all leptons and nLayers (this point might be done using the original analysis repo)
@@ -69,11 +76,11 @@ This has the BackgroundEstimation, StandardAnalysis and TriggerAnalysis selectio
 - Estimated efficiencies for 2022 (incomplete) and 2023 data
 - Compared efficiencies with BG MC 2022 (incomplete) and 2023 data
 - Estimated efficiencies in signal MC samples
+- Removed the muon pt cut to make plots with the full muon pt range
+- Finished estimating uncertainties on problematic datasets of 2022
+   - The issue was when checking for muons passing the HLT path, where the name of the filter of path `HLT_IsoMu24` changed from 2022C/D (2022 in MC) to 2022E/F/G (2022EE in MC)
 
 ## TODO for TriggerAnalysis
 
-- Remove the muon pt cut to make the plots with the full muon pt range
-   - This might increase the size of trees, but should be manageable
-- Finish estimating uncertainties on problematic datasets of 2022
 - Implement method to extract trigger efficiency scale factors
-- Estimate uncertainty over all signal samples and select the best for AN
+- Estimate efficiency over all signal samples and select the best for AN
