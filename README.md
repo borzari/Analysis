@@ -28,14 +28,13 @@ This has the BackgroundEstimation, StandardAnalysis and TriggerAnalysis selectio
    - Implemented tau (e and mu) ZtoLepProbeTrk selections
       - Number of T&P was different because of a mistake in `goodInvMass` method
       - Compared with 100k events and everything worked fine
-
+   - Implemented all fiducial selections using 2018 maps
+      - Muon and ECAL will be used for run 3; electron will be changed to the ML approach
 
 ## Ongoing for BackgroundEstimation
 
-- Implementing fiducial maps using run 2 maps
-   - Might also use electron run 3 and (if it is correct) muon run 3
-   - ECAL status is easier to implement for run 3, since it comes directly from data
 - Implementing leptonTagPt55 leptonTagPt55MetTrig selections to compare with original
+   - The only difference is the MET triggers, so only one selection might be used
 - Implementing a way to add leptons SFs to have the correct plots; most probably will rely on passing the .root files with the SFs for the distinct lepton cases
 
 ## TODO for BackgroundEstimation

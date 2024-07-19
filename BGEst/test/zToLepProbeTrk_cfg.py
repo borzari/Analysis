@@ -5,12 +5,12 @@ from Analysis.BGEst.zToLepProbeTrk_cfi import *
 ##### Set up process #####
 ###########################################################
 
-nEvents = 100000
+nEvents = 10000
 
-# lepton = 'electron'
+lepton = 'electron'
 # lepton = 'muon'
 # lepton = 'tauele'
-lepton = 'taumu'
+#lepton = 'taumu'
 
 from Configuration.Eras.Era_Run3_cff import Run3
 process = cms.Process ('ZTOLEPPROBETRK', Run3)

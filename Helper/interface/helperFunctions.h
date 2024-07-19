@@ -14,6 +14,7 @@
 #include <chrono>
 
 #include "TH1D.h"
+#include "TH2D.h"
 #include "TLorentzVector.h"
 #include "TTree.h"
 #include "TMath.h"
@@ -53,6 +54,8 @@
 #include "Geometry/Records/interface/CaloGeometryRecord.h"
 #include "DataFormats/EcalDetId/interface/EBDetId.h"
 #include "DataFormats/EcalDetId/interface/EEDetId.h"
+#include "CondFormats/EcalObjects/interface/EcalChannelStatus.h"
+#include "CondFormats/DataRecord/interface/EcalChannelStatusRcd.h"
 
 #include "CommonTools/UtilAlgos/interface/TFileService.h"
 #include "FWCore/ServiceRegistry/interface/Service.h"
@@ -60,6 +63,28 @@
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "FWCore/ParameterSet/interface/ParameterSetDescription.h"
 #include "FWCore/PluginManager/interface/ModuleDef.h"
+
+struct EtaPhi {
+  double eta;
+  double phi;
+  double sigma;
+
+  EtaPhi(const double a, const double b, const double sigma = -1.0) :
+    eta(a),
+    phi(b),
+    sigma(sigma)
+  {
+  }
+};
+
+struct EtaPhiList : public std::vector<EtaPhi> {
+  double minDeltaR;
+
+  EtaPhiList() :
+    minDeltaR(0.0)
+  {
+  }
+};
 
 class helperFunctions {
 
@@ -149,6 +174,239 @@ class helperFunctions {
 
   static bool passesLightFlavorRejection (const pat::Tau &tau){
     return (tau.tauID("byVVVLooseDeepTau2017v2p1VSe") || tau.tauID("byVVVLooseDeepTau2018v2p5VSe")) && (tau.tauID("byVLooseDeepTau2017v2p1VSmu") || tau.tauID("byVLooseDeepTau2018v2p5VSmu"));
+  }
+
+  template<typename T>
+  static void extractFiducialMap (EtaPhiList &vetoList)
+  {
+
+    edm::FileInPath histFile;
+    std::string era = "";
+    std::string beforeVetoHistName = "beforeVeto";
+    std::string afterVetoHistName = "afterVeto";
+    double thresholdForVeto = 0.0;
+
+    if(std::is_same<T, pat::Electron>::value) histFile = edm::FileInPath("Analysis/Helper/data/electronFiducialMap_2018_data.root");
+    if(std::is_same<T, pat::Muon>::value) histFile = edm::FileInPath("Analysis/Helper/data/muonFiducialMap_2018_data.root");
+
+    std::cout << "Attempting to extract \"" << beforeVetoHistName << "\" and \"" << afterVetoHistName << "\" from \"" << histFile.fullPath () << "\"..." << std::endl;
+    TFile *fin = TFile::Open (histFile.fullPath ().c_str());
+    if (!fin || fin->IsZombie ())
+      {
+        std::cout << "No file named \"" << histFile.fullPath () << "\" found. Skipping..." << std::endl;;
+        return;
+      }
+
+    TH2D * beforeVetoHist = (TH2D*)fin->Get(beforeVetoHistName.c_str());
+    TH2D * afterVetoHist  = (TH2D*)fin->Get(afterVetoHistName.c_str());
+    if (!beforeVetoHist) {
+      std::cout << "No histogram named \"" << beforeVetoHistName.c_str() << "\" found. Skipping..." << std::endl;;
+      return;
+    }
+    if (!afterVetoHist) {
+      std::cout << "No histogram named \"" << afterVetoHistName.c_str() << "\" found. Skipping..." << std::endl;;
+      return;
+    }
+
+    beforeVetoHist->SetDirectory(0);
+    afterVetoHist->SetDirectory(0);
+    fin->Close();
+    delete fin;
+
+    //////////////////////////////////////////////////////////////////////////////
+    // First calculate the mean efficiency.
+    //////////////////////////////////////////////////////////////////////////////
+
+    double totalEventsBeforeVeto = 0, totalEventsAfterVeto = 0;
+    int nBinsWithTags = 0;
+    for (int i = 1; i <= beforeVetoHist->GetXaxis ()->GetNbins (); i++)
+      {
+        for (int j = 1; j <= beforeVetoHist->GetYaxis ()->GetNbins (); j++)
+          {
+            double binRadius = hypot (0.5 * beforeVetoHist->GetXaxis ()->GetBinWidth (i), 0.5 * beforeVetoHist->GetYaxis ()->GetBinWidth (j));
+            (vetoList.minDeltaR < binRadius) && (vetoList.minDeltaR = binRadius);
+
+            double contentBeforeVeto = beforeVetoHist->GetBinContent (i, j);
+
+            if (!contentBeforeVeto) // skip bins that are empty in the before-veto histogram
+              continue;
+
+            nBinsWithTags++;
+
+            totalEventsBeforeVeto += contentBeforeVeto;
+            totalEventsAfterVeto  += afterVetoHist->GetBinContent (i, j);
+          }
+      }
+    double meanInefficiency = totalEventsAfterVeto / totalEventsBeforeVeto;
+
+    //////////////////////////////////////////////////////////////////////////////
+    // Then calculate the standard deviation of the mean inefficiency.
+    //////////////////////////////////////////////////////////////////////////////
+    double stdDevInefficiency = 0;
+    afterVetoHist->Divide (beforeVetoHist);
+    for (int i = 1; i <= beforeVetoHist->GetXaxis ()->GetNbins (); i++)
+      {
+        for (int j = 1; j <= beforeVetoHist->GetYaxis ()->GetNbins (); j++)
+          {
+            if(beforeVetoHist->GetBinContent (i, j) == 0) // skip bins that are empty in the before-veto histogram
+              continue;
+
+            double thisInefficiency = afterVetoHist->GetBinContent (i, j);
+
+            stdDevInefficiency += (thisInefficiency - meanInefficiency) * (thisInefficiency - meanInefficiency);
+          }
+      }
+
+    if (nBinsWithTags < 2) stdDevInefficiency = 0.;
+    else {
+      stdDevInefficiency /= nBinsWithTags - 1;
+      stdDevInefficiency = sqrt(stdDevInefficiency);
+    }
+
+    //////////////////////////////////////////////////////////////////////////////
+    // Then find the bins which are greater than the mean by more than
+    // thresholdForVeto sigma. Add the coordinates for these bins to the veto
+    // list.
+    //////////////////////////////////////////////////////////////////////////////
+    for (int i = 1; i <= afterVetoHist->GetXaxis ()->GetNbins (); i++)
+      {
+        for (int j = 1; j <= afterVetoHist->GetYaxis ()->GetNbins (); j++)
+          {
+            double content = afterVetoHist->GetBinContent (i, j),
+              //error = afterVetoHist->GetBinError (i, j),
+                   eta = afterVetoHist->GetXaxis ()->GetBinCenter (i),
+                   phi = afterVetoHist->GetYaxis ()->GetBinCenter (j);
+
+            if ((content - meanInefficiency) > thresholdForVeto * stdDevInefficiency)
+              {
+                vetoList.emplace_back (eta, phi, (content - meanInefficiency) / stdDevInefficiency);
+              }
+          }
+      }
+    //////////////////////////////////////////////////////////////////////////////
+    delete beforeVetoHist;
+    delete afterVetoHist;
+  }
+
+  static bool isFiducialTrack (const pat::IsolatedTrack &track, const EtaPhiList &vetoList, const double minDeltaR, double maxSigma)
+  {
+    const double minDR = std::max(minDeltaR, vetoList.minDeltaR); // use the given parameter unless the bin size from which the veto list is calculated is larger
+    bool isFiducial = true;
+    maxSigma = 0.0;
+    for (const auto &etaPhi : vetoList)
+      {
+        if (deltaR (track.eta (), track.phi (), etaPhi.eta, etaPhi.phi) < minDR)
+          {
+            isFiducial = false;
+            if (etaPhi.sigma > maxSigma)
+              maxSigma = etaPhi.sigma;
+          }
+      }
+    return isFiducial;
+  }
+
+  static int getChannelStatusMaps (edm::ESHandle<EcalChannelStatus> &ecalStatus, const edm::ESHandle<CaloGeometry>& caloGeometry, std::map<DetId, std::vector<double> > &EcalAllDeadChannelsValMap, std::map<DetId, std::vector<int> > &EcalAllDeadChannelsBitMap)
+  {
+    EcalAllDeadChannelsValMap.clear(); EcalAllDeadChannelsBitMap.clear();
+    TH2D *badChannels = (false ? new TH2D ("badChannels", ";#eta;#phi", 360, -3.0, 3.0, 360, -3.2, 3.2) : NULL);
+
+  // Loop over EB ...
+    for( int ieta=-85; ieta<=85; ieta++ ){
+       for( int iphi=0; iphi<=360; iphi++ ){
+          if(! EBDetId::validDetId( ieta, iphi ) )  continue;
+
+          const EBDetId detid = EBDetId( ieta, iphi, EBDetId::ETAPHIMODE );
+          EcalChannelStatus::const_iterator chit = ecalStatus->find( detid );
+  // refer https://twiki.cern.ch/twiki/bin/viewauth/CMS/EcalChannelStatus
+          int status = ( chit != ecalStatus->end() ) ? chit->getStatusCode() & 0x1F : -1;
+
+          const CaloSubdetectorGeometry*  subGeom = caloGeometry->getSubdetectorGeometry (detid);
+          auto cellGeom = subGeom->getGeometry (detid);
+          double eta = cellGeom->getPosition ().eta ();
+          double phi = cellGeom->getPosition ().phi ();
+          double theta = cellGeom->getPosition().theta();
+
+          if(status >= 3){
+             std::vector<double> valVec; std::vector<int> bitVec;
+             valVec.push_back(eta); valVec.push_back(phi); valVec.push_back(theta);
+             bitVec.push_back(1); bitVec.push_back(ieta); bitVec.push_back(iphi); bitVec.push_back(status);
+             EcalAllDeadChannelsValMap.insert( std::make_pair(detid, valVec) );
+             EcalAllDeadChannelsBitMap.insert( std::make_pair(detid, bitVec) );
+             if (false)
+               badChannels->Fill (eta, phi);
+          }
+       } // end loop iphi
+    } // end loop ieta
+
+  // Loop over EE detid
+    for( int ix=0; ix<=100; ix++ ){
+       for( int iy=0; iy<=100; iy++ ){
+          for( int iz=-1; iz<=1; iz++ ){
+             if(iz==0)  continue;
+             if(! EEDetId::validDetId( ix, iy, iz ) )  continue;
+
+             const EEDetId detid = EEDetId( ix, iy, iz, EEDetId::XYMODE );
+             EcalChannelStatus::const_iterator chit = ecalStatus->find( detid );
+             int status = ( chit != ecalStatus->end() ) ? chit->getStatusCode() & 0x1F : -1;
+
+             const CaloSubdetectorGeometry*  subGeom = caloGeometry->getSubdetectorGeometry (detid);
+             auto cellGeom = subGeom->getGeometry (detid);
+             double eta = cellGeom->getPosition ().eta () ;
+             double phi = cellGeom->getPosition ().phi () ;
+             double theta = cellGeom->getPosition().theta();
+
+             if(status >= 3){
+                std::vector<double> valVec; std::vector<int> bitVec;
+                valVec.push_back(eta); valVec.push_back(phi); valVec.push_back(theta);
+                bitVec.push_back(2); bitVec.push_back(ix); bitVec.push_back(iy); bitVec.push_back(iz); bitVec.push_back(status);
+                EcalAllDeadChannelsValMap.insert( std::make_pair(detid, valVec) );
+                EcalAllDeadChannelsBitMap.insert( std::make_pair(detid, bitVec) );
+                 if (false)
+                   badChannels->Fill (eta, phi);
+             }
+          } // end loop iz
+       } // end loop iy
+    } // end loop ix
+
+    if (false)
+      {
+        TFile *fout = new TFile ("badEcalChannels.root", "recreate");
+        fout->cd ();
+        badChannels->Write ();
+        fout->Close ();
+
+        delete badChannels;
+        delete fout;
+      }
+
+    return 1;
+  }
+
+  static int isCloseToBadEcalChannel (const pat::IsolatedTrack &track, const double deltaRCut, std::map<DetId, std::vector<double> > &EcalAllDeadChannelsValMap, std::map<DetId, std::vector<int> > &EcalAllDeadChannelsBitMap)
+  {
+     double trackEta = track.eta(), trackPhi = track.phi();
+
+     double min_dist = 999;
+     DetId min_detId;
+
+     std::map<DetId, std::vector<int> >::const_iterator bitItor;
+     for(bitItor = EcalAllDeadChannelsBitMap.begin(); bitItor != EcalAllDeadChannelsBitMap.end(); bitItor++){
+
+        DetId maskedDetId = bitItor->first;
+
+        std::map<DetId, std::vector<double> >::const_iterator valItor = EcalAllDeadChannelsValMap.find(maskedDetId);
+        if( valItor == EcalAllDeadChannelsValMap.end() ){ std::cout<<"Error cannot find maskedDetId in EcalAllDeadChannelsValMap ?!"<<std::endl; continue; }
+
+        double eta = (valItor->second)[0], phi = (valItor->second)[1];
+
+        double dist = reco::deltaR(eta, phi, trackEta, trackPhi);
+
+        if( min_dist > dist ){ min_dist = dist; min_detId = maskedDetId; }
+     }
+
+     if( min_dist > deltaRCut && deltaRCut > 0 ) return 0;
+
+     return 1;
   }
 
   static bool inTOBCrack (const pat::IsolatedTrack &track){

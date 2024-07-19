@@ -68,6 +68,8 @@
 #include "Geometry/Records/interface/CaloGeometryRecord.h"
 #include "DataFormats/EcalDetId/interface/EBDetId.h"
 #include "DataFormats/EcalDetId/interface/EEDetId.h"
+#include "CondFormats/EcalObjects/interface/EcalChannelStatus.h"
+#include "CondFormats/DataRecord/interface/EcalChannelStatusRcd.h"
 
 #include "CommonTools/UtilAlgos/interface/TFileService.h"
 #include "FWCore/ServiceRegistry/interface/Service.h"
@@ -119,10 +121,12 @@ private:
   edm::EDGetTokenT<edm::TriggerResults> triggersHLTToken_;
   edm::EDGetTokenT<std::vector<pat::TriggerObjectStandAlone>> trigobjsToken_;
   edm::ESGetToken<CaloGeometry, CaloGeometryRecord> caloGeometryToken_;
+  edm::ESGetToken<EcalChannelStatus, EcalChannelStatusRcd> ecalStatusToken_;
   edm::EDGetTokenT<bool> ecalBadCalibFilterUpdateToken_;
   std::string HLTName_;
 
   edm::ESHandle<CaloGeometry> caloGeometry;
+  edm::ESHandle<EcalChannelStatus> ecalStatus;
 
   int nTPOS = 0;
   int nTPSS = 0;
@@ -130,6 +134,12 @@ private:
   int nTPSS_veto = 0;
   int nTPOSLoose_veto = 0;
   int nTPSSLoose_veto = 0;
+
+  EtaPhiList vetoListElec;
+  EtaPhiList vetoListMu;
+
+  std::map<DetId, std::vector<double> > EcalAllDeadChannelsValMap;
+  std::map<DetId, std::vector<int> >    EcalAllDeadChannelsBitMap;
 
 };
 
@@ -151,10 +161,14 @@ zToLepProbeTrk<T>::zToLepProbeTrk(const edm::ParameterSet& iConfig)
       triggersHLTToken_(consumes<edm::TriggerResults>(iConfig.getParameter<edm::InputTag>("triggersHLT"))),
       trigobjsToken_(consumes<std::vector<pat::TriggerObjectStandAlone>>(iConfig.getParameter<edm::InputTag>("trigobjs"))),
       caloGeometryToken_(esConsumes()),
+      ecalStatusToken_(esConsumes()),
       ecalBadCalibFilterUpdateToken_(consumes<bool>(iConfig.getParameter<edm::InputTag>("ecalBadCalibReducedMINIAODFilter"))) {
   //now do what ever initialization is needed
 
   HLTName_ = iConfig.getParameter<std::string>("HLTName");
+
+  helperFunctions::extractFiducialMap<pat::Electron>(vetoListElec);
+  helperFunctions::extractFiducialMap<pat::Muon>(vetoListMu);
 
   commonCuts = {
     "Total",
@@ -196,10 +210,15 @@ zToLepProbeTrk<T>::zToLepProbeTrk(const edm::ParameterSet& iConfig)
   trackCuts = {
     "track pt > 30 GeV",
     "track fabs(#eta) < 2.1",
-    "track fabs ( eta ) < 0.15 || fabs ( eta ) > 0.35",
     "track fabs ( eta ) < 1.42 || fabs ( eta ) > 1.65",
+    "track fabs ( eta ) < 0.15 || fabs ( eta ) > 0.35",
     "track fabs ( eta ) < 1.55 || fabs ( eta ) > 1.85",
     "track !inTOBCrack",
+    //
+    "isFiducialElectronTrack",
+    "isFiducialMuonTrack",
+    "isFiducialECALTrack",
+    //
     "track hitPattern_.numberOfValidPixelHits >= 4",
     "track hitPattern_.numberOfValidHits >= 4",
     "track missingInnerHits == 0",
@@ -306,6 +325,11 @@ bool zToLepProbeTrk<T>::filter(edm::Event& iEvent, const edm::EventSetup& iSetup
   int hist_nTPOSLoose_veto = 0;
   int hist_nTPSSLoose_veto = 0;
 
+  caloGeometry = iSetup.getHandle(caloGeometryToken_);
+  ecalStatus = iSetup.getHandle(ecalStatusToken_);
+
+  helperFunctions::getChannelStatusMaps(ecalStatus,caloGeometry,EcalAllDeadChannelsValMap,EcalAllDeadChannelsBitMap);
+
   edm::Handle<std::vector<pat::IsolatedTrack>> tracks;
   iEvent.getByToken(tracksToken_, tracks);
 
@@ -339,8 +363,6 @@ bool zToLepProbeTrk<T>::filter(edm::Event& iEvent, const edm::EventSetup& iSetup
 
   edm::Handle<double> rhoCentralCalo;
   iEvent.getByToken (rhoCentralCaloToken_, rhoCentralCalo);
-
-  caloGeometry = iSetup.getHandle(caloGeometryToken_);
 
   edm::Handle<bool> passecalBadCalibFilterUpdate;
   iEvent.getByToken(ecalBadCalibFilterUpdateToken_, passecalBadCalibFilterUpdate);
@@ -599,12 +621,12 @@ bool zToLepProbeTrk<T>::filter(edm::Event& iEvent, const edm::EventSetup& iSetup
 
     ++cutIdxInc;
 
-    if((fabs(track.eta()) < 0.15) || (fabs(track.eta()) > 0.35)) 
+    if((fabs(track.eta()) < 1.42) || (fabs(track.eta()) > 1.65)) 
       {passSel[startTrackIdx+cutIdxInc] = true; if(auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep-1]) auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep] = true;}
 
     ++cutIdxInc;
 
-    if((fabs(track.eta()) < 1.42) || (fabs(track.eta()) > 1.65)) 
+    if((fabs(track.eta()) < 0.15) || (fabs(track.eta()) > 0.35)) 
       {passSel[startTrackIdx+cutIdxInc] = true; if(auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep-1]) auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep] = true;}
 
     ++cutIdxInc;
@@ -614,12 +636,29 @@ bool zToLepProbeTrk<T>::filter(edm::Event& iEvent, const edm::EventSetup& iSetup
 
     ++cutIdxInc;
 
-    // Need to include fiducial cuts here!!!
-
     if(!helperFunctions::inTOBCrack(track)) 
       {passSel[startTrackIdx+cutIdxInc] = true; if(auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep-1]) auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep] = true;}
 
     ++cutIdxInc;
+
+    // Need to include fiducial cuts here!!!
+
+    if(helperFunctions::isFiducialTrack(track,vetoListElec,0.05,-1.0))
+      {passSel[startTrackIdx+cutIdxInc] = true; if(auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep-1]) auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep] = true;}
+
+    ++cutIdxInc;
+
+    if(helperFunctions::isFiducialTrack(track,vetoListMu,0.05,-1.0))
+      {passSel[startTrackIdx+cutIdxInc] = true; if(auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep-1]) auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep] = true;}
+
+    ++cutIdxInc;
+
+    if(!helperFunctions::isCloseToBadEcalChannel(track,0.05,EcalAllDeadChannelsValMap,EcalAllDeadChannelsBitMap))
+      {passSel[startTrackIdx+cutIdxInc] = true; if(auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep-1]) auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep] = true;}
+
+    ++cutIdxInc;
+
+    // Need to include fiducial cuts here!!!
 
     if(track.hitPattern().numberOfValidPixelHits() >= 4) 
       {passSel[startTrackIdx+cutIdxInc] = true; if(auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep-1]) auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep] = true;}
