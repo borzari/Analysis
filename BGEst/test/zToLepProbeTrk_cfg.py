@@ -8,9 +8,9 @@ from Analysis.BGEst.zToLepProbeTrk_cfi import *
 nEvents = 100000
 
 # lepton = 'electron'
-lepton = 'muon'
-# lepton = 'taue'
-# lepton = 'taum'
+# lepton = 'muon'
+# lepton = 'tauele'
+lepton = 'taumu'
 
 from Configuration.Eras.Era_Run3_cff import Run3
 process = cms.Process ('ZTOLEPPROBETRK', Run3)
@@ -43,8 +43,8 @@ process.zToTauMuProbeTrkFilter = zToTauMuProbeTrkFilter_.clone()
 
 if lepton == 'electron': process.filterPath = cms.Path(process.zToElecProbeTrkFilter)
 if lepton == 'muon': process.filterPath = cms.Path(process.zToMuonProbeTrkFilter)
-if lepton == 'taue': process.filterPath = cms.Path(process.zToTauEleProbeTrkFilter)
-if lepton == 'taum': process.filterPath = cms.Path(process.zToTauMuProbeTrkFilter)
+if lepton == 'tauele': process.filterPath = cms.Path(process.zToTauEleProbeTrkFilter)
+if lepton == 'taumu': process.filterPath = cms.Path(process.zToTauMuProbeTrkFilter)
 
 from Configuration.EventContent.EventContent_cff import MINIAODSIMEventContent
 process.EXODisappTrkSkimContent = MINIAODSIMEventContent.clone()

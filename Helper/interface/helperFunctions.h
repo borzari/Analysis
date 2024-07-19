@@ -252,19 +252,21 @@ class helperFunctions {
   {
     return sqrt (track.px () * track.px () + track.py () * track.py () + track.pz () * track.pz () + mass * mass);
   }
-  
+
   template<typename T>
-  static bool goodInvMassLepton (const T &tag, const pat::IsolatedTrack &probe)
+  static bool goodInvMassLepton (const T &tag, const pat::IsolatedTrack &probe, bool isTau)
   {
     double lepMass = 0.0;
 
-    if(std::is_same<T, pat::Electron>::value) lepMass = 0.000510998950;
-    if(std::is_same<T, pat::Muon>::value) lepMass = 0.1056583755;
+    if(std::is_same<T, pat::Electron>::value) lepMass = 0.000510998950; // Electron mass extracted from PDG on 27/06/2024 https://pdg.lbl.gov/2024/tables/contents_tables.html
+    if(std::is_same<T, pat::Muon>::value) lepMass = 0.1056583755; // Muon mass extracted from PDG on 27/06/2024 https://pdg.lbl.gov/2024/tables/contents_tables.html
+    if(isTau) lepMass = 0.13957039; // Pion mass extracted from PDG on 16/07/2024 https://pdg.lbl.gov/2024/tables/contents_tables.html
 
     TLorentzVector t (tag.px(), tag.py(), tag.pz(), tag.energy()),
-                   p (probe.px(), probe.py(), probe.pz(), energyGivenMass(lepMass, probe)); // Electron mass extracted from PDG on 27/06/2024 https://pdg.lbl.gov/2024/tables/contents_tables.html
+                   p (probe.px(), probe.py(), probe.pz(), energyGivenMass(lepMass, probe));
     double m = (t + p).M();
-    return (fabs (m - 91.1880) < 10.0); // Z mass extracted from PDG on 27/06/2024 https://pdg.lbl.gov/2024/tables/contents_tables.html
+    if(!isTau) return (fabs (m - 91.1880) < 10.0); // Z mass extracted from PDG on 27/06/2024 https://pdg.lbl.gov/2024/tables/contents_tables.html
+    return (15.0 < (91.1880 - m) && (91.1880 - m) < 50.0); // Z mass extracted from PDG on 27/06/2024 https://pdg.lbl.gov/2024/tables/contents_tables.html
   }
   
   template<typename T>
@@ -275,6 +277,7 @@ class helperFunctions {
 
     if(std::is_same<T, pat::Electron>::value) lepPdgid = 11;
     if(std::is_same<T, pat::Muon>::value) lepPdgid = 13;
+    if(std::is_same<T, pat::Tau>::value) lepPdgid = 211;
 
     double deltaRToClosestPFLepton = 99.0;
     for(const auto &pfCandidate : pfCandidates) {
@@ -340,7 +343,7 @@ class helperFunctions {
   }
   
   template<typename T>
-  static bool passesVeto (const pat::IsolatedTrack &probe, const std::vector<pat::PackedCandidate> &pfCandidates)
+  static bool passesVeto (const pat::IsolatedTrack &probe, const std::vector<pat::PackedCandidate> &pfCandidates, const std::vector<pat::Jet> &jets)
   {
     bool passesElec = deltaRToClosestPFLepton<pat::Electron>(probe, pfCandidates) > 0.15
                && (probe.matchedCaloJetEmEnergy() + probe.matchedCaloJetHadEnergy()) < 10.0//;
@@ -349,9 +352,15 @@ class helperFunctions {
     bool passesMuon = deltaRToClosestPFLepton<pat::Muon>(probe, pfCandidates) > 0.15
                // && probe.hitAndTOBDrop_bestTrackMissingOuterHits () >= 3.0; // This is not applied for BG MC
                && probe.lostOuterLayers() >= 3.0; // This is not applied for BG MC
+    bool passesTau = deltaRToClosestPFLepton<pat::Tau>(probe, pfCandidates) > 0.15
+               && dRMinJet (probe, jets) > 0.5
+               && (probe.matchedCaloJetEmEnergy() + probe.matchedCaloJetHadEnergy()) < 10.0
+               // && probe.hitAndTOBDrop_bestTrackMissingOuterHits () >= 3.0; // This is not applied for BG MC
+               && probe.lostOuterLayers() >= 3.0; // This is not applied for BG MC
   
     if(std::is_same<T, pat::Electron>::value) return passesElec;
     if(std::is_same<T, pat::Muon>::value) return passesMuon;
+    if(std::is_same<T, pat::Tau>::value) return passesTau;
   }
 
   static bool passesLooseElecVeto (const pat::IsolatedTrack &probe, const std::vector<pat::Electron> &electrons, const reco::Vertex &vertex)
@@ -425,20 +434,13 @@ class helperFunctions {
     return caloNewNoPUDRp5CentralCalo;
   }
   
-  static double transvMassElec(const pat::Electron& electron, const pat::MET& met)
+  template<typename T>
+  static double transvMassLepton(const T& lepton, const pat::MET& met)
   {
+
+    double dPhi = deltaPhi (lepton.phi(), met.phi());
+	  return sqrt(2.0 * lepton.pt() * met.pt() * (1.0 - cos(dPhi)));
     
-    double rawCaloTot = electron.pt() - met.pt();
-  
-    return rawCaloTot;
-  }
-  
-  static double transvMassMuon(const pat::Muon& muon, const pat::MET& met)
-  {
-    
-    double rawCaloTot = muon.pt() - met.pt();
-  
-    return rawCaloTot;
   }
 
 };

@@ -25,20 +25,22 @@ This has the BackgroundEstimation, StandardAnalysis and TriggerAnalysis selectio
       - Had some issues with caloGeometry, but solved with using Run3 era in `zToLepProbeTrk_cfg.py`
       - Solved events difference; the METFilters needed to be updated; the implementation of the new filters was propagated to the lepton tag skims
       - Got the correct number of T&P pairs, plotted the number of pairs per event and it seems consistent
-      - Implemented tau (e and mu) ZtoLepProbeTrk transverse mass calculation
+   - Implemented tau (e and mu) ZtoLepProbeTrk selections
+      - Number of T&P was different because of a mistake in `goodInvMass` method
+      - Compared with 100k events and everything worked fine
+
 
 ## Ongoing for BackgroundEstimation
 
-- Implementing tau (e and mu) ZtoLepProbeTrk selections
-   - Need to compare with original and check if it is consistent
-      - Number of T&P pairs is different when comparing with original
-      - Possibly because requirement for good inv mass of the pair is different, but need to be checked
+- Implementing fiducial maps using run 2 maps
+   - Might also use electron run 3 and (if it is correct) muon run 3
+   - ECAL status is easier to implement for run 3, since it comes directly from data
+- Implementing leptonTagPt55 leptonTagPt55MetTrig selections to compare with original
 - Implementing a way to add leptons SFs to have the correct plots; most probably will rely on passing the .root files with the SFs for the distinct lepton cases
 
 ## TODO for BackgroundEstimation
 
 - Charged leptons
-   - Implement leptonTagPt55 leptonTagPt55MetTrig selections and compare with original
    - Implement distinct layer signal regions
    - Determine Nctrl, Pveto, Poffline and Ptrigger for all leptons and nLayers (this point might be done using the original analysis repo)
       - Estimate BG for all types and compare with data

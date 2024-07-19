@@ -94,34 +94,6 @@ public:
   ~zToLepProbeTrk() override;
 
   static void fillDescriptions(edm::ConfigurationDescriptions& descriptions);
-  // bool isMatchedToElecTriggerObject (const edm::Event &, const edm::TriggerResults &, const pat::Electron &, const std::vector<pat::TriggerObjectStandAlone> &, const std::string &, const std::string &, const double = 0.1);
-  // bool isMatchedToMuonTriggerObject (const edm::Event &, const edm::TriggerResults &, const pat::Muon &, const std::vector<pat::TriggerObjectStandAlone> &, const std::string &, const std::string &, const double = 0.1);
-  // bool isMatchedToTauTriggerObject (const edm::Event &, const edm::TriggerResults &, const pat::Tau &, const std::vector<pat::TriggerObjectStandAlone> &, const std::string &, const std::string &, const double = 0.1);
-  // bool passesDecayModeReconstruction (const pat::Tau &);
-  // bool passesLightFlavorRejection (const pat::Tau &);
-  // bool inTOBCrack (const pat::IsolatedTrack &);
-  // const int extraMissingMiddleHits (const pat::IsolatedTrack &) const;
-  // const int hitDrop_missingMiddleHits (const pat::IsolatedTrack &) const;
-  // double dRMinJet (const pat::IsolatedTrack &, const std::vector<pat::Jet> &);
-  // double deltaRToClosestElectron(const pat::IsolatedTrack &, const std::vector<pat::Electron> &);
-  // double deltaRToClosestMuon(const pat::IsolatedTrack &, const std::vector<pat::Muon> &);
-  // double deltaRToClosestTauHad(const pat::IsolatedTrack &, const std::vector<pat::Tau> &);
-  // double energyGivenMass (const double, const pat::IsolatedTrack &);
-  // bool goodInvMassElec (const pat::Electron &, const pat::IsolatedTrack &);
-  // bool goodInvMassMuon (const pat::Muon &, const pat::IsolatedTrack &);
-  // double deltaRToClosestPFElectron(const pat::IsolatedTrack &, const std::vector<pat::PackedCandidate> &);
-  // double deltaRToClosestPFMuon(const pat::IsolatedTrack &, const std::vector<pat::PackedCandidate> &);
-  // double deltaRToClosestVetoElectron (const pat::IsolatedTrack &, const std::vector<pat::Electron> &, const reco::Vertex &);
-  // double deltaRToClosestLooseMuon (const pat::IsolatedTrack &, const std::vector<pat::Muon> &);
-  // bool passesVeto (const pat::IsolatedTrack &, const std::vector<pat::PackedCandidate> &);
-  // bool passesLooseElecVeto (const pat::IsolatedTrack &, const std::vector<pat::Electron> &, const reco::Vertex &);
-  // bool passesLooseMuonVeto (const pat::IsolatedTrack &, const std::vector<pat::Muon> &);
-  // GlobalPoint getPosition(const DetId&);
-  // bool insideCone(const pat::IsolatedTrack &, const DetId&);
-  // double calculateCaloE (const pat::IsolatedTrack&, const EBRecHitCollection &, const EERecHitCollection &, const HBHERecHitCollection &);
-  // double caloNewNoPUDRp5CentralCalo(const pat::IsolatedTrack&, const EBRecHitCollection &, const EERecHitCollection &, const HBHERecHitCollection &, const double);
-  // double transvMassElec(const pat::Electron&, const pat::MET&);
-  // double transvMassMuon(const pat::Muon&, const pat::MET&);
 
   std::vector<std::string> commonCuts, electronCuts, muonCuts, taueCuts, taumCuts, trackCuts;
 
@@ -214,6 +186,13 @@ zToLepProbeTrk<T>::zToLepProbeTrk(const edm::ParameterSet& iConfig)
   taumCuts = muonCuts;
   taumCuts.push_back("muon-mets with transMass (muon, met) < 40");
 
+  std::string closestLep1 = "";
+  std::string closestLep2 = "";
+
+  if(strcmp(T, "electron") == 0){closestLep1 = "track deltaRToClosestMuon > 0.15"; closestLep2 = "track deltaRToClosestTauHad > 0.15";}
+  if(strcmp(T, "muon") == 0){closestLep1 = "track deltaRToClosestElectron > 0.15"; closestLep2 = "track deltaRToClosestTauHad > 0.15";}
+  if(strcmp(T, "tauele") == 0 || strcmp(T, "taumu") == 0){closestLep1 = "track deltaRToClosestMuon > 0.15"; closestLep2 = "track deltaRToClosestElectron > 0.15";}
+
   trackCuts = {
     "track pt > 30 GeV",
     "track fabs(#eta) < 2.1",
@@ -228,11 +207,20 @@ zToLepProbeTrk<T>::zToLepProbeTrk(const edm::ParameterSet& iConfig)
     "track ((pfIsolationDR03_.chargedHadronIso + pfIsolationDR03_.puChargedHadronIso) / pt) < 0.05",
     "track |d0| < 0.02","track |dz| < 0.5",
     "track dRMinJet > 0.5",
-    "track deltaRToClosestMuon > 0.15",
-    "track deltaRToClosestTauHad > 0.15"
+    closestLep1,
+    closestLep2
   };
 
   if(strcmp(T, "muon") == 0) trackCuts.push_back("track caloNewNoPUDRp5CentralCalo < 10");
+  if(strcmp(T, "tauele") == 0 || strcmp(T, "taumu") == 0){
+    std::string elementToRemove = "track dRMinJet > 0.5";
+
+    // Remove the element using erase function and iterators
+    auto it = std::find(trackCuts.begin(), trackCuts.end(), elementToRemove);
+
+    // If element is found found, erase it
+    if (it != trackCuts.end()) trackCuts.erase(it);
+  }
 
   int nBins = int(commonCuts.size() + trackCuts.size());
   double maxRange = 0.0;
@@ -240,8 +228,8 @@ zToLepProbeTrk<T>::zToLepProbeTrk(const edm::ParameterSet& iConfig)
 
   if(strcmp(T, "electron") == 0){nBins = nBins + int(electronCuts.size()); maxRange = double(nBins) - 0.5; lepCuts = electronCuts;}
   if(strcmp(T, "muon") == 0){nBins = nBins + int(muonCuts.size()); maxRange = double(nBins) - 0.5; lepCuts = muonCuts;}
-  if(strcmp(T, "taue") == 0){nBins = nBins + int(taueCuts.size()); maxRange = double(nBins) - 0.5; lepCuts = taueCuts;}
-  if(strcmp(T, "taum") == 0){nBins = nBins + int(taumCuts.size()); maxRange = double(nBins) - 0.5; lepCuts = taumCuts;}
+  if(strcmp(T, "tauele") == 0){nBins = nBins + int(taueCuts.size()); maxRange = double(nBins) - 0.5; lepCuts = taueCuts;}
+  if(strcmp(T, "taumu") == 0){nBins = nBins + int(taumCuts.size()); maxRange = double(nBins) - 0.5; lepCuts = taumCuts;}
 
   oneDHists_["cutflow"] = fs_->make<TH1D>("cutflow", "", nBins, -0.5, maxRange);
   oneDHists_["selection"] = fs_->make<TH1D>("selection", "", nBins, -0.5, maxRange);
@@ -480,45 +468,7 @@ bool zToLepProbeTrk<T>::filter(edm::Event& iEvent, const edm::EventSetup& iSetup
   
   }
 
-// -----------------------------------------------------------------------------------------------------------------------------------------------------
-// Cut Name                                                                                                       Events     Cumul. Eff.     Indiv. Eff.
-// -----------------------------------------------------------------------------------------------------------------------------------------------------
-// total                                                                                                         10000.0        100.000%        100.000%
-// trigger                                                                                                        3945.0         39.450%         39.450%
-//   HLT_Ele32_WPTight_Gsf_v
-// MET filter                                                                                                     3890.0         38.900%         99.310%
-//  Flag_goodVertices AND
-//  Flag_globalTightHalo2016Filter AND
-//  Flag_HBHENoiseFilter AND
-//  Flag_HBHENoiseIsoFilter AND
-//  Flag_EcalDeadCellTriggerPrimitiveFilter
-// >= 1 mets with badPFMuonFilter && badChargedCandidateFilter && passecalBadCalibFilterUpdate                    3890.0         38.900%        100.000%
-// >= 1 electrons with pt > 32                                                                                    3855.0         38.550%         39.300%
-// >= 1 electrons firing trigger                                                                                  3823.0         38.230%         39.170%
-//   HLT_Ele32_WPTight_Gsf_v
-// >= 1 electrons with fabs(eta) < 2.1                                                                            3725.0         37.250%         53.100%
-// >= 1 electrons with passesVID_tightID (ID + iso)                                                               3457.0         34.570%         37.990%
-// >= 1 electrons with |d0| < 0.05, 0.10 (EB, EE)                                                                 3454.0         34.540%         52.660%
-// >= 1 electrons with |dz| < 0.10, 0.20 (EB, EE)                                                                 3407.0         34.070%         43.780%
-// >= 1 electron-mets with transMass (electron, met) < 40                                                         1858.0         18.580%         47.920%
-// >= 1 tracks with pt > 30                                                                                       1858.0         18.580%         93.900%
-// >= 1 tracks with fabs ( eta ) < 2.1                                                                            1858.0         18.580%         99.980%
-// >= 1 tracks with fabs ( eta ) < 1.42 || fabs ( eta ) > 1.65                                                    1803.0         18.030%         99.440%
-// >= 1 tracks with fabs ( eta ) < 0.15 || fabs ( eta ) > 0.35                                                    1712.0         17.120%         99.680%
-// >= 1 tracks with fabs ( eta ) < 1.55 || fabs ( eta ) > 1.85                                                    1625.0         16.250%         99.150%
-// >= 1 tracks with !inTOBCrack                                                                                   1625.0         16.250%        100.000%
-// >= 1 tracks with hitPattern_.numberOfValidPixelHits >= 4                                                       1309.0         13.090%         97.730%
-// >= 1 tracks with hitPattern_.numberOfValidHits >= 4                                                            1309.0         13.090%         99.970%
-// >= 1 tracks with missingInnerHits == 0                                                                         1292.0         12.920%         99.800%
-// >= 1 tracks with hitDrop_missingMiddleHits == 0                                                                1278.0         12.780%         99.640%
-// >= 1 tracks with  ((pfIsolationDR03_.chargedHadronIso + pfIsolationDR03_.puChargedHadronIso) / pt) < 0.05       201.0          2.010%         26.360%
-// >= 1 tracks with |d0| < 0.02                                                                                    201.0          2.010%         99.960%
-// >= 1 tracks with |dz| < 0.5                                                                                     201.0          2.010%         99.460%
-// >= 1 tracks with deltaRToClosestElectron > 0.15                                                                   1.0          0.010%         93.240%
-// >= 1 tracks with deltaRToClosestMuon > 0.15                                                                       1.0          0.010%         89.630%
-// -----------------------------------------------------------------------------------------------------------------------------------------------------
-
-  if(strcmp(T, "taue") == 0){
+  if(strcmp(T, "tauele") == 0){
 
     for(int j = 0; j < int(taueCuts.size()); ++j) {passSel.push_back(false); passCut.push_back(false); auxPassCut.push_back(false);}
 
@@ -558,7 +508,7 @@ bool zToLepProbeTrk<T>::filter(edm::Event& iEvent, const edm::EventSetup& iSetup
 
       ++cutIdxInc;
 
-      if(helperFunctions::transvMassElec(electron,met) < 40.0)
+      if(helperFunctions::transvMassLepton<pat::Electron>(electron,met) < 40.0)
         {passSel[startTauIdx+cutIdxInc] = true; if(auxPassCut[cutIdxInc-1]) auxPassCut[cutIdxInc] = true;}
 
       if(auxPassCut[cutIdxInc]) taueTags.push_back(electron);
@@ -572,7 +522,7 @@ bool zToLepProbeTrk<T>::filter(edm::Event& iEvent, const edm::EventSetup& iSetup
   
   }
 
-  if(strcmp(T, "taum") == 0){
+  if(strcmp(T, "taumu") == 0){
 
     for(int j = 0; j < int(taumCuts.size()); ++j) {passSel.push_back(false); passCut.push_back(false); auxPassCut.push_back(false);}
 
@@ -607,10 +557,10 @@ bool zToLepProbeTrk<T>::filter(edm::Event& iEvent, const edm::EventSetup& iSetup
 
       ++cutIdxInc;
 
-      if(helperFunctions::transvMassMuon(muon,met) < 40.0)
+      if(helperFunctions::transvMassLepton<pat::Muon>(muon,met) < 40.0)
         {passSel[startTauIdx+cutIdxInc] = true; if(auxPassCut[cutIdxInc-1]) auxPassCut[cutIdxInc] = true;}
 
-      if(auxPassCut[startTauIdx+cutIdxInc-2]) taumTags.push_back(muon);
+      if(auxPassCut[cutIdxInc]) taumTags.push_back(muon);
 
       for(int j = 0; j < int(auxPassCut.size()); ++j){
         if(auxPassCut[j]) passCut[j+int(commonCuts.size())-1] = true;
@@ -630,8 +580,8 @@ bool zToLepProbeTrk<T>::filter(edm::Event& iEvent, const edm::EventSetup& iSetup
   int startTrackIdx = 0;
   if(strcmp(T, "electron") == 0) startTrackIdx = int(commonCuts.size() + electronCuts.size()) - 1;
   if(strcmp(T, "muon") == 0) startTrackIdx = int(commonCuts.size() + muonCuts.size()) - 1;
-  if(strcmp(T, "taue") == 0) startTrackIdx = int(commonCuts.size() + taueCuts.size()) - 1;
-  if(strcmp(T, "taum") == 0) startTrackIdx = int(commonCuts.size() + taumCuts.size()) - 1;
+  if(strcmp(T, "tauele") == 0) startTrackIdx = int(commonCuts.size() + taueCuts.size()) - 1;
+  if(strcmp(T, "taumu") == 0) startTrackIdx = int(commonCuts.size() + taumCuts.size()) - 1;
 
   int getStTrkIdxLep = int(commonCuts.size()) - 1;
 
@@ -704,29 +654,33 @@ bool zToLepProbeTrk<T>::filter(edm::Event& iEvent, const edm::EventSetup& iSetup
     if(fabs(track.dz()) < 0.5) 
       {passSel[startTrackIdx+cutIdxInc] = true; if(auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep-1]) auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep] = true;}
 
-    ++cutIdxInc;
-
-    if(helperFunctions::dRMinJet(track, *jets) > 0.5) 
-      {passSel[startTrackIdx+cutIdxInc] = true; if(auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep-1]) auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep] = true;}
-
-    ++cutIdxInc;
-
-    if(strcmp(T, "electron") == 0 || strcmp(T, "taue") == 0 || strcmp(T, "taum") == 0)
+    if(strcmp(T, "electron") == 0 || strcmp(T, "muon") == 0)
       {
+        ++cutIdxInc;
+
+        if(helperFunctions::dRMinJet(track, *jets) > 0.5)
+          {passSel[startTrackIdx+cutIdxInc] = true; if(auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep-1]) auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep] = true;}
+      }
+
+    if(strcmp(T, "electron") == 0 || strcmp(T, "tauele") == 0 || strcmp(T, "taumu") == 0)
+      {
+        ++cutIdxInc;
+
         if(helperFunctions::deltaRToClosestLepton<pat::Muon>(track, *muons) > 0.15)
           {passSel[startTrackIdx+cutIdxInc] = true; if(auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep-1]) auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep] = true;}
       }
 
-    if(strcmp(T, "muon") == 0 || strcmp(T, "taue") == 0 || strcmp(T, "taum") == 0)
+    if(strcmp(T, "muon") == 0 || strcmp(T, "tauele") == 0 || strcmp(T, "taumu") == 0)
       {
+        ++cutIdxInc;
+
         if(helperFunctions::deltaRToClosestLepton<pat::Electron>(track, *electrons) > 0.15)
           {passSel[startTrackIdx+cutIdxInc] = true; if(auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep-1]) auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep] = true;}
       }
 
-    ++cutIdxInc;
-
     if(strcmp(T, "electron") == 0 || strcmp(T, "muon") == 0) 
       {
+        ++cutIdxInc;
 
         if(helperFunctions::deltaRToClosestTauHad(track, *taus) > 0.15)
           {passSel[startTrackIdx+cutIdxInc] = true; if(auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep-1]) auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep] = true;}
@@ -758,14 +712,14 @@ bool zToLepProbeTrk<T>::filter(edm::Event& iEvent, const edm::EventSetup& iSetup
       }
     }
 
-    if(strcmp(T, "taue") == 0){
+    if(strcmp(T, "tauele") == 0){
       for(int j = int(taueCuts.size()); j < int(auxPassCut.size()); ++j){
         if(auxPassCut[j]) passCut[j+int(commonCuts.size())-1] = true;
         auxPassCut[j] = false;
       }
     }
 
-    if(strcmp(T, "taum") == 0){
+    if(strcmp(T, "taumu") == 0){
       for(int j = int(taumCuts.size()); j < int(auxPassCut.size()); ++j){
         if(auxPassCut[j]) passCut[j+int(commonCuts.size())-1] = true;
         auxPassCut[j] = false;
@@ -777,10 +731,10 @@ bool zToLepProbeTrk<T>::filter(edm::Event& iEvent, const edm::EventSetup& iSetup
   if(strcmp(T, "electron") == 0){
     for(const auto &tag : electronTags){
       for(const auto &probe : trackProbes){
-        if(helperFunctions::goodInvMassLepton<pat::Electron>(tag, probe) && (tag.charge()*probe.charge()) < 0.0){
+        if(helperFunctions::goodInvMassLepton<pat::Electron>(tag, probe, false) && (tag.charge()*probe.charge()) < 0.0){
           ++nTPOS;
           ++hist_nTPOS;
-          if(helperFunctions::passesVeto<pat::Electron>(probe, *pfCandidates)){
+          if(helperFunctions::passesVeto<pat::Electron>(probe, *pfCandidates, *jets)){
             ++nTPOS_veto;
             ++hist_nTPOS_veto;
           }
@@ -789,10 +743,10 @@ bool zToLepProbeTrk<T>::filter(edm::Event& iEvent, const edm::EventSetup& iSetup
             ++hist_nTPOSLoose_veto;
           }
         }
-        if(helperFunctions::goodInvMassLepton<pat::Electron>(tag, probe) && (tag.charge()*probe.charge()) > 0.0){
+        if(helperFunctions::goodInvMassLepton<pat::Electron>(tag, probe, false) && (tag.charge()*probe.charge()) > 0.0){
           ++nTPSS;
           ++hist_nTPSS;
-          if(helperFunctions::passesVeto<pat::Electron>(probe, *pfCandidates)){
+          if(helperFunctions::passesVeto<pat::Electron>(probe, *pfCandidates, *jets)){
             ++nTPSS_veto;
             ++hist_nTPSS_veto;
           }
@@ -808,10 +762,10 @@ bool zToLepProbeTrk<T>::filter(edm::Event& iEvent, const edm::EventSetup& iSetup
   if(strcmp(T, "muon") == 0){
     for(const auto &tag : muonTags){
       for(const auto &probe : trackProbes){
-        if(helperFunctions::goodInvMassLepton<pat::Muon>(tag, probe) && (tag.charge()*probe.charge()) < 0.0){
+        if(helperFunctions::goodInvMassLepton<pat::Muon>(tag, probe, false) && (tag.charge()*probe.charge()) < 0.0){
           ++nTPOS;
           ++hist_nTPOS;
-          if(helperFunctions::passesVeto<pat::Muon>(probe, *pfCandidates)){
+          if(helperFunctions::passesVeto<pat::Muon>(probe, *pfCandidates, *jets)){
             ++nTPOS_veto;
             ++hist_nTPOS_veto;
           }
@@ -820,10 +774,10 @@ bool zToLepProbeTrk<T>::filter(edm::Event& iEvent, const edm::EventSetup& iSetup
             ++hist_nTPOSLoose_veto;
           }
         }
-        if(helperFunctions::goodInvMassLepton<pat::Muon>(tag, probe) && (tag.charge()*probe.charge()) > 0.0){
+        if(helperFunctions::goodInvMassLepton<pat::Muon>(tag, probe, false) && (tag.charge()*probe.charge()) > 0.0){
           ++nTPSS;
           ++hist_nTPSS;
-          if(helperFunctions::passesVeto<pat::Muon>(probe, *pfCandidates)){
+          if(helperFunctions::passesVeto<pat::Muon>(probe, *pfCandidates, *jets)){
             ++nTPSS_veto;
             ++hist_nTPSS_veto;
           }
@@ -836,46 +790,62 @@ bool zToLepProbeTrk<T>::filter(edm::Event& iEvent, const edm::EventSetup& iSetup
     }
   }
 
-  if(strcmp(T, "taue") == 0){
+  if(strcmp(T, "tauele") == 0){
     for(const auto &tag : taueTags){
       for(const auto &probe : trackProbes){
-        if(helperFunctions::goodInvMassLepton<pat::Electron>(tag, probe) && (tag.charge()*probe.charge()) < 0.0){
+        if(helperFunctions::goodInvMassLepton<pat::Electron>(tag, probe, true) && (tag.charge()*probe.charge()) < 0.0){
           ++nTPOS;
           ++hist_nTPOS;
-          if(helperFunctions::passesVeto<pat::Electron>(probe, *pfCandidates)){
+          if(helperFunctions::passesVeto<pat::Tau>(probe, *pfCandidates, *jets)){
             ++nTPOS_veto;
             ++hist_nTPOS_veto;
           }
+          if(helperFunctions::passesLooseElecVeto(probe, *electrons, pv)){
+            ++nTPOSLoose_veto;
+            ++hist_nTPOSLoose_veto;
+          }
         }
-        if(helperFunctions::goodInvMassLepton<pat::Electron>(tag, probe) && (tag.charge()*probe.charge()) > 0.0){
+        if(helperFunctions::goodInvMassLepton<pat::Electron>(tag, probe, true) && (tag.charge()*probe.charge()) > 0.0){
           ++nTPSS;
           ++hist_nTPSS;
-          if(helperFunctions::passesVeto<pat::Electron>(probe, *pfCandidates)){
+          if(helperFunctions::passesVeto<pat::Tau>(probe, *pfCandidates, *jets)){
             ++nTPSS_veto;
             ++hist_nTPSS_veto;
+          }
+          if(helperFunctions::passesLooseElecVeto(probe, *electrons, pv)){
+            ++nTPSSLoose_veto;
+            ++hist_nTPSSLoose_veto;
           }
         }
       }
     }
   }
 
-  if(strcmp(T, "taum") == 0){
+  if(strcmp(T, "taumu") == 0){
     for(const auto &tag : taumTags){
       for(const auto &probe : trackProbes){
-        if(helperFunctions::goodInvMassLepton<pat::Muon>(tag, probe) && (tag.charge()*probe.charge()) < 0.0){
+        if(helperFunctions::goodInvMassLepton<pat::Muon>(tag, probe, true) && (tag.charge()*probe.charge()) < 0.0){
           ++nTPOS;
           ++hist_nTPOS;
-          if(helperFunctions::passesVeto<pat::Muon>(probe, *pfCandidates)){
+          if(helperFunctions::passesVeto<pat::Tau>(probe, *pfCandidates, *jets)){
             ++nTPOS_veto;
             ++hist_nTPOS_veto;
           }
+          if(helperFunctions::passesLooseMuonVeto(probe, *muons)){
+            ++nTPOSLoose_veto;
+            ++hist_nTPOSLoose_veto;
+          }
         }
-        if(helperFunctions::goodInvMassLepton<pat::Muon>(tag, probe) && (tag.charge()*probe.charge()) > 0.0){
+        if(helperFunctions::goodInvMassLepton<pat::Muon>(tag, probe, true) && (tag.charge()*probe.charge()) > 0.0){
           ++nTPSS;
           ++hist_nTPSS;
-          if(helperFunctions::passesVeto<pat::Muon>(probe, *pfCandidates)){
+          if(helperFunctions::passesVeto<pat::Tau>(probe, *pfCandidates, *jets)){
             ++nTPSS_veto;
             ++hist_nTPSS_veto;
+          }
+          if(helperFunctions::passesLooseMuonVeto(probe, *muons)){
+            ++nTPSSLoose_veto;
+            ++hist_nTPSSLoose_veto;
           }
         }
       }
@@ -899,441 +869,6 @@ bool zToLepProbeTrk<T>::filter(edm::Event& iEvent, const edm::EventSetup& iSetup
 
   return isGood;
 }
-
-
-
-// MEMBER FUNCTIONS ===============================================================
-
-
-
-// template<char const *T>
-// bool zToLepProbeTrk<T>::isMatchedToElecTriggerObject (const edm::Event &event, const edm::TriggerResults &triggers, const pat::Electron &obj, const std::vector<pat::TriggerObjectStandAlone> &trigObjs, const std::string &collection, const std::string &filter, const double dR)
-// {
-//   if(collection == "") return false;
-//   for(auto trigObj : trigObjs) {
-//     trigObj.unpackNamesAndLabels(event, triggers);
-//     if(trigObj.collection() != collection) continue;
-//     if(filter != "") {
-//       bool flag = false;
-//       for(const auto &filterLabel : trigObj.filterLabels ())
-//         if(filterLabel == filter) {
-//           flag = true;
-//           break;
-//         }
-//       if (!flag) continue;
-//     }
-//     if(deltaR (obj, trigObj) > dR) continue;
-//     return true;
-//   }
-//   return false;
-// }
-
-// template<char const *T>
-// bool zToLepProbeTrk<T>::isMatchedToMuonTriggerObject (const edm::Event &event, const edm::TriggerResults &triggers, const pat::Muon &obj, const std::vector<pat::TriggerObjectStandAlone> &trigObjs, const std::string &collection, const std::string &filter, const double dR)
-// {
-//   if(collection == "") return false;
-//   for(auto trigObj : trigObjs) {
-//     trigObj.unpackNamesAndLabels(event, triggers);
-//     if(trigObj.collection() != collection) continue;
-//     if(filter != "") {
-//       bool flag = false;
-//       for(const auto &filterLabel : trigObj.filterLabels ())
-//         if(filterLabel == filter) {
-//           flag = true;
-//           break;
-//         }
-//       if (!flag) continue;
-//     }
-//     if(deltaR (obj, trigObj) > dR) continue;
-//     return true;
-//   }
-//   return false;
-// }
-
-// template<char const *T>
-// bool zToLepProbeTrk<T>::isMatchedToTauTriggerObject (const edm::Event &event, const edm::TriggerResults &triggers, const pat::Tau &obj, const std::vector<pat::TriggerObjectStandAlone> &trigObjs, const std::string &collection, const std::string &filter, const double dR)
-// {
-//   if(collection == "") return false;
-//   for(auto trigObj : trigObjs) {
-//     trigObj.unpackNamesAndLabels(event, triggers);
-//     if(trigObj.collection() != collection) continue;
-//     if(filter != "") {
-//       bool flag = false;
-//       for(const auto &filterLabel : trigObj.filterLabels ())
-//         if(filterLabel == filter) {
-//           flag = true;
-//           break;
-//         }
-//       if (!flag) continue;
-//     }
-//     if(deltaR (obj, trigObj) > dR) continue;
-//     return true;
-//   }
-//   return false;
-// }
-
-// template<char const *T>
-// bool zToLepProbeTrk<T>::passesDecayModeReconstruction (const pat::Tau &tau){
-//   return (tau.tauID("decayModeFindingNewDMs") && (tau.tauID("byLooseCombinedIsolationDeltaBetaCorr3Hits") || (tau.tauID("chargedIsoPtSumdR03")+std::max(0.,tau.tauID("neutralIsoPtSumdR03")-0.072*tau.tauID("puCorrPtSum"))<2.5) || tau.tauID("byVVVLooseDeepTau2017v2p1VSjet") || tau.tauID("byVVVLooseDeepTau2018v2p5VSjet")));
-// }
-
-// template<char const *T>
-// bool zToLepProbeTrk<T>::passesLightFlavorRejection (const pat::Tau &tau){
-//   return (tau.tauID("byVVVLooseDeepTau2017v2p1VSe") || tau.tauID("byVVVLooseDeepTau2018v2p5VSe")) && (tau.tauID("byVLooseDeepTau2017v2p1VSmu") || tau.tauID("byVLooseDeepTau2018v2p5VSmu"));
-// }
-
-// template<char const *T>
-// bool zToLepProbeTrk<T>::inTOBCrack (const pat::IsolatedTrack &track){
-//   return (fabs(track.dz()) < 0.5 && fabs(1.57079632679489661923 - track.theta()) < 1.0e-3);
-// }
-
-// template<char const *T> 
-// const int zToLepProbeTrk<T>::extraMissingMiddleHits (const pat::IsolatedTrack &track) const
-// {
-
-//   unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
-//   std::default_random_engine generator (seed);
-//   std::uniform_real_distribution<double> distribution (0.0, 1.0);
-//   double dropTOBProbability_ = 0.00830971251971; // This is taken from Run 2; needs to be updated once correct value is estimated
-//   double hitProbability_ = 0.0175874821487; // This is taken from Run 2; needs to be updated once correct value is estimated
-//   // bool dropHits = true;
-//   bool dropHits = false;
-//   bool dropTOBDecision_ = (dropHits ? distribution (generator) : 1.0e6) < dropTOBProbability_;
-//   std::vector<bool> dropMiddleHitDecisions_;
-//   for (int i = 0; i < 50; i++)
-//     dropMiddleHitDecisions_.push_back ((dropHits ? distribution (generator) : 1.0e6) < hitProbability_);
-
-//   int nHits = 0;
-//   bool countMissingMiddleHits = false;
-//   for (int i = 0; i < track.hitPattern().stripLayersWithMeasurement() - (dropTOBDecision_ ? track.hitPattern ().stripTOBLayersWithMeasurement () : 0); i++)
-//     {
-//       bool hit = !dropMiddleHitDecisions_.at(i);
-//       if (!hit && countMissingMiddleHits)
-//         nHits++;
-//       if (hit)
-//         countMissingMiddleHits = true;
-//     }
-
-//   return nHits;
-// }
-
-// template<char const *T>
-// const int zToLepProbeTrk<T>::hitDrop_missingMiddleHits (const pat::IsolatedTrack &track) const
-// {
-//   int nDropHits = helperFunctions::extraMissingMiddleHits(track);
-//   return track.hitPattern().trackerLayersWithoutMeasurement(reco::HitPattern::TRACK_HITS) + nDropHits;
-// }
-
-// template<char const *T>
-// double zToLepProbeTrk<T>::dRMinJet (const pat::IsolatedTrack &track, const std::vector<pat::Jet> &jets)
-// {
-//   double dRMinJet = 99.0;
-//   for(const auto &jet : jets){
-//     if(jet.pt() > 30 &&
-//     fabs(jet.eta()) < 4.5 &&
-//     (((jet.neutralHadronEnergyFraction()<0.90 &&
-//     jet.neutralEmEnergyFraction()<0.90 &&
-//     (jet.chargedMultiplicity() + jet.neutralMultiplicity())>1 &&
-//     jet.muonEnergyFraction()<0.8) &&
-//     ((fabs(jet.eta())<=2.4 &&
-//     jet.chargedHadronEnergyFraction()>0 &&
-//     jet.chargedMultiplicity()>0 &&
-//     jet.chargedEmEnergyFraction()<0.90) ||
-//     fabs(jet.eta())>2.4) &&
-//     fabs(jet.eta())<=3.0) ||
-//     (jet.neutralEmEnergyFraction()<0.90 && jet.neutralMultiplicity()>10 && fabs(jet.eta())>3.0)))
-//     {
-//       double dR = deltaR(track, jet);
-//       if(dR < dRMinJet || dRMinJet < 0.0) dRMinJet = dR;
-//     }
-//   }
-//   return dRMinJet;
-// }
-
-// template<char const *T>
-// double zToLepProbeTrk<T>::deltaRToClosestElectron(const pat::IsolatedTrack &track, const std::vector<pat::Electron> &electrons) 
-// {
-
-//   double dR;
-//   double deltaRToClosestElectron = 99.0;
-
-//   for(const auto &electron : electrons) {
-//     dR = deltaR(track, electron);
-//     if(dR < deltaRToClosestElectron || deltaRToClosestElectron < 0.0) deltaRToClosestElectron = dR;
-//   }
-
-//   return deltaRToClosestElectron;
-
-// }
-
-// template<char const *T>
-// double zToLepProbeTrk<T>::deltaRToClosestMuon(const pat::IsolatedTrack &track, const std::vector<pat::Muon> &muons) 
-// {
-
-//   double dR;
-//   double deltaRToClosestMuon = 99.0;
-
-//   for(const auto &muon : muons) {
-//     dR = deltaR(track, muon);
-//     if(dR < deltaRToClosestMuon || deltaRToClosestMuon < 0.0) deltaRToClosestMuon = dR;
-//   }
-
-//   return deltaRToClosestMuon;
-
-// }
-
-// template<char const *T>
-// double zToLepProbeTrk<T>::deltaRToClosestTauHad(const pat::IsolatedTrack &track, const std::vector<pat::Tau> &taus) 
-// {
-
-//   double dR;
-//   double deltaRToClosestTauHad = 99.0;
-//   bool passesDecayModeReconstruction;
-//   bool passesLightFlavorRejection;
-
-//   for(const auto &tau : taus) {
-//     dR = deltaR(track, tau);
-
-//     passesDecayModeReconstruction = (tau.tauID("decayModeFindingNewDMs"));
-//     passesLightFlavorRejection = (tau.tauID("byVVVLooseDeepTau2017v2p1VSe") || tau.tauID("byVVVLooseDeepTau2018v2p5VSe")) && (tau.tauID("byVLooseDeepTau2017v2p1VSmu") || tau.tauID("byVLooseDeepTau2018v2p5VSmu"));
-
-//     if(passesDecayModeReconstruction && passesLightFlavorRejection && (dR < deltaRToClosestTauHad  || deltaRToClosestTauHad  < 0.0)) {
-//       deltaRToClosestTauHad = dR;
-//     }
-//   }
-
-//   return deltaRToClosestTauHad;
-// }
-
-// template<char const *T>
-// double zToLepProbeTrk<T>::energyGivenMass (const double mass, const pat::IsolatedTrack &track)
-// {
-//   return sqrt (track.px () * track.px () + track.py () * track.py () + track.pz () * track.pz () + mass * mass);
-// }
-
-// template<char const *T> 
-// bool zToLepProbeTrk<T>::goodInvMassElec (const pat::Electron &tag, const pat::IsolatedTrack &probe)
-// {
-//   TLorentzVector t (tag.px(), tag.py(), tag.pz(), tag.energy()),
-//                  p (probe.px(), probe.py(), probe.pz(), helperFunctions::energyGivenMass(0.000510998950, probe)); // Electron mass extracted from PDG on 27/06/2024 https://pdg.lbl.gov/2024/tables/contents_tables.html
-//   double m = (t + p).M();
-//   return (fabs (m - 91.1880) < 10.0); // Z mass extracted from PDG on 27/06/2024 https://pdg.lbl.gov/2024/tables/contents_tables.html
-// }
-
-// template<char const *T> 
-// bool zToLepProbeTrk<T>::goodInvMassMuon (const pat::Muon &tag, const pat::IsolatedTrack &probe)
-// {
-//   TLorentzVector t (tag.px(), tag.py(), tag.pz(), tag.energy()),
-//                  p (probe.px(), probe.py(), probe.pz(), helperFunctions::energyGivenMass(0.1056583755, probe)); // Muon mass extracted from PDG on 27/06/2024 https://pdg.lbl.gov/2024/tables/contents_tables.html
-//   double m = (t + p).M();
-//   return (fabs (m - 91.1880) < 10.0); // Z mass extracted from PDG on 27/06/2024 https://pdg.lbl.gov/2024/tables/contents_tables.html
-// }
-
-// template<char const *T>
-// double zToLepProbeTrk<T>::deltaRToClosestPFElectron(const pat::IsolatedTrack &track, const std::vector<pat::PackedCandidate> &pfCandidates) 
-// {
-//   double deltaRToClosestPFElectron = 99.0;
-//   for(const auto &pfCandidate : pfCandidates) {
-//       int pdgid = abs(pfCandidate.pdgId());
-//       if(pdgid != 11) continue;
-
-//       double dR = deltaR(track, pfCandidate);
-
-//       if(pdgid == 11 &&
-//          (dR < deltaRToClosestPFElectron || deltaRToClosestPFElectron < 0.0))
-//         deltaRToClosestPFElectron = dR;
-//   }
-//   return deltaRToClosestPFElectron;
-// }
-
-// template<char const *T>
-// double zToLepProbeTrk<T>::deltaRToClosestPFMuon(const pat::IsolatedTrack &track, const std::vector<pat::PackedCandidate> &pfCandidates) 
-// {
-//   double deltaRToClosestPFMuon = 99.0;
-//   for(const auto &pfCandidate : pfCandidates) {
-//       int pdgid = abs(pfCandidate.pdgId());
-//       if(pdgid != 13) continue;
-
-//       double dR = deltaR(track, pfCandidate);
-
-//       if(pdgid == 11 &&
-//          (dR < deltaRToClosestPFMuon || deltaRToClosestPFMuon < 0.0))
-//         deltaRToClosestPFMuon = dR;
-//   }
-//   return deltaRToClosestPFMuon;
-// }
-
-// template<char const *T>
-// double zToLepProbeTrk<T>::deltaRToClosestVetoElectron (const pat::IsolatedTrack &track, const std::vector<pat::Electron> &electrons, const reco::Vertex &vertex)
-// {
-//   double deltaRToClosestVetoElectron = 99.0;
-  
-//   double dR;
-
-//   for(const auto &electron : electrons) {
-//     dR = deltaR(track, electron);
-
-//     bool passesVeto_dxy = false, passesVeto_dz = false;
-
-//     // Note in below, these remain false if |eta| >= 2.5; thus an eta cut is also being applied here as intended
-//     double ele_d0 = fabs(electron.gsfTrack()->dxy(vertex.position()));
-//     double ele_dz = fabs(electron.gsfTrack()->dz(vertex.position()));
-
-//     if(fabs(electron.superCluster ()->eta()) <= 1.479) {
-//       passesVeto_dxy = (ele_d0 < 0.05);
-//       passesVeto_dz = (ele_dz < 0.10);
-//     }
-//     else if(fabs(electron.superCluster()->eta()) < 2.5) {
-//       passesVeto_dxy = (ele_d0 < 0.10);
-//       passesVeto_dz = (ele_dz < 0.20);
-//     }
-
-//     if(electron.electronID("cutBasedElectronID-RunIIIWinter22-V1-tight") &&
-//        passesVeto_dxy &&
-//        passesVeto_dz &&
-//        (dR < deltaRToClosestVetoElectron || deltaRToClosestVetoElectron < 0.0)) {
-//       deltaRToClosestVetoElectron = dR;
-//     }
-//   } // for electrons
-
-//   return deltaRToClosestVetoElectron;
-// }
-
-// template<char const *T>
-// double zToLepProbeTrk<T>::deltaRToClosestLooseMuon(const pat::IsolatedTrack &track, const std::vector<pat::Muon> &muons) 
-// {
-//   double deltaRToClosestLooseMuon = 99.0;
-
-//   double dR;
-
-//   for(const auto &muon : muons) {
-//     dR = deltaR(track, muon);
-//     if(muon.isLooseMuon()  && (dR < deltaRToClosestLooseMuon  || deltaRToClosestLooseMuon  < 0.0)) deltaRToClosestLooseMuon = dR;
-//   }
-
-//   return deltaRToClosestLooseMuon;
-// }
-
-// template<char const *T> 
-// bool zToLepProbeTrk<T>::passesVeto (const pat::IsolatedTrack &probe, const std::vector<pat::PackedCandidate> &pfCandidates)
-// {
-//   bool passesElec = helperFunctions::deltaRToClosestPFElectron(probe, pfCandidates) > 0.15
-//              && (probe.matchedCaloJetEmEnergy() + probe.matchedCaloJetHadEnergy()) < 10.0//;
-//              // && probe.hitAndTOBDrop_bestTrackMissingOuterHits () >= 3.0; // This is not applied for BG MC
-//              && probe.lostOuterLayers() >= 3.0; // This is not applied for BG MC
-//   bool passesMuon = helperFunctions::deltaRToClosestPFMuon(probe, pfCandidates) > 0.15
-//              // && probe.hitAndTOBDrop_bestTrackMissingOuterHits () >= 3.0; // This is not applied for BG MC
-//              && probe.lostOuterLayers() >= 3.0; // This is not applied for BG MC
-
-//   // if(std::is_same<T, pat::Electron>::value) return passesElec;
-//   if(strcmp(T, "electron") == 0) return passesElec;
-//   // if(std::is_same<T, pat::Muon>::value) return passesMuon;
-//   if(strcmp(T, "muon") == 0) return passesMuon;
-//   // if(std::is_same<T, pat::Tau>::value) return passesTau;
-// }
-
-// template<char const *T> 
-// bool zToLepProbeTrk<T>::passesLooseElecVeto (const pat::IsolatedTrack &probe, const std::vector<pat::Electron> &electrons, const reco::Vertex &vertex)
-// {
-//   bool passes = helperFunctions::deltaRToClosestVetoElectron(probe,electrons,vertex) > 0.15
-//              && (probe.matchedCaloJetEmEnergy() + probe.matchedCaloJetHadEnergy()) < 10.0
-//              // && probe.hitAndTOBDrop_bestTrackMissingOuterHits () >= 3.0; // This is not applied for BG MC
-//              && probe.lostOuterLayers() >= 3.0; // This is not applied for BG MC
-//   return passes;
-// }
-
-// template<char const *T> 
-// bool zToLepProbeTrk<T>::passesLooseMuonVeto (const pat::IsolatedTrack &probe, const std::vector<pat::Muon> &muons)
-// {
-//   bool passes = helperFunctions::deltaRToClosestLooseMuon(probe, muons) > 0.15
-//              // && probe.hitAndTOBDrop_bestTrackMissingOuterHits () >= 3.0; // This is not applied for BG MC
-//              && probe.lostOuterLayers() >= 3.0; // This is not applied for BG MC          
-//   return passes;
-// }
-
-// template<char const *T>
-// GlobalPoint zToLepProbeTrk<T>::getPosition(const DetId& id)
-// {
-//    if ( ! caloGeometry.isValid() ||
-//         ! caloGeometry->getSubdetectorGeometry(id) ||
-//         ! caloGeometry->getSubdetectorGeometry(id)->getGeometry(id) ) {
-//       throw cms::Exception("FatalError") << "Failed to access geometry for DetId: " << id.rawId();
-//       return GlobalPoint(0,0,0);
-//    }
-//    return caloGeometry->getSubdetectorGeometry(id)->getGeometry(id)->getPosition();
-// }
-
-// template<char const *T> 
-// bool zToLepProbeTrk<T>::insideCone(const pat::IsolatedTrack &candTrack, const DetId& id)
-// {
-//    GlobalPoint idPosition = helperFunctions::getPosition(id,caloGeometry);
-//    if (idPosition.mag()<0.01) return false;
-//    math::XYZVector idPositionRoot( idPosition.x(), idPosition.y(), idPosition.z() );
-//    return deltaR(candTrack, idPositionRoot) < 0.5;
-// }
-
-// template<char const *T> 
-// double zToLepProbeTrk<T>::calculateCaloE(const pat::IsolatedTrack& track, const EBRecHitCollection &EBRecHits, const EERecHitCollection &EERecHits, const HBHERecHitCollection &HBHERecHits)
-// { 
-
-//   double caloEnergy = 0.0;
-
-//   for (const auto &hit : EBRecHits) {
-//     if (helperFunctions::insideCone(track, hit.detid(),caloGeometry)) {
-//       caloEnergy += hit.energy();
-//     }
-//   }
-//   for (const auto &hit : EERecHits) {
-//     if (helperFunctions::insideCone(track, hit.detid(),caloGeometry)) {
-//       caloEnergy += hit.energy();
-//     }
-//   }
-
-//   for (const auto &hit : HBHERecHits) {
-//     if (helperFunctions::insideCone(track, hit.detid(),caloGeometry)) {
-//       caloEnergy += hit.energy();
-//     }
-//   }
-
-//   return caloEnergy;
-// }
-
-// template<char const *T> 
-// double zToLepProbeTrk<T>::caloNewNoPUDRp5CentralCalo(const pat::IsolatedTrack& track, const EBRecHitCollection &EBRecHits, const EERecHitCollection &EERecHits, const HBHERecHitCollection &HBHERecHits, const double rhoCentralCalo)
-// {
-  
-//   double rawCaloTot = helperFunctions::calculateCaloE(track, EBRecHits, EERecHits, HBHERecHits, caloGeometry);
-//   double caloCorr = rhoCentralCalo * TMath::Pi() * 0.5 * 0.5;  // Define effective area as pi*r^2, where r is radius of DeltaR cone.
-//   double caloNewNoPUDRp5CentralCalo = TMath::Max(0., rawCaloTot - caloCorr);
-
-//   return caloNewNoPUDRp5CentralCalo;
-// }
-
-// template<char const *T>
-// void zToLepProbeTrk<T>::envSet (const edm::EventSetup& iSetup)
-// {
-//   caloGeometry = iSetup.getHandle(caloGeometryToken_);
-//   if(!caloGeometry.isValid()) throw cms::Exception("FatalError") << "Failed to get the caloGeometry!";
-// }
-
-// template<char const *T> 
-// double zToLepProbeTrk<T>::transvMassElec(const pat::Electron& electron, const pat::MET& met)
-// {
-  
-//   double rawCaloTot = electron.pt() - met.pt();
-
-//   return rawCaloTot;
-// }
-
-// template<char const *T> 
-// double zToLepProbeTrk<T>::transvMassMuon(const pat::Muon& muon, const pat::MET& met)
-// {
-  
-//   double rawCaloTot = muon.pt() - met.pt();
-
-//   return rawCaloTot;
-// }
-
 
 // ------------ method fills 'descriptions' with the allowed parameters for the module  ------------
 template<char const *T>
