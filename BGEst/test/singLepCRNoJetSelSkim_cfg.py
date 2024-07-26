@@ -1,5 +1,5 @@
 import FWCore.ParameterSet.Config as cms
-from Analysis.BGEst.zToLepProbeTrk_cfi import *
+from Analysis.BGEst.singLepCRNoJetSelSkim_cfi import *
 
 ###########################################################
 ##### Set up process #####
@@ -8,13 +8,16 @@ from Analysis.BGEst.zToLepProbeTrk_cfi import *
 # nEvents = 10000
 nEvents = -1
 
-# lepton = 'electron'
+lepton = 'electron'
 # lepton = 'muon'
-# lepton = 'tauele'
-lepton = 'taumu'
+# lepton = 'tau'
+
+useMETTriggers = True
+
+if useMETTriggers: lepton = "METTriggers_" + lepton
 
 from Configuration.Eras.Era_Run3_cff import Run3
-process = cms.Process ('ZTOLEPPROBETRK', Run3)
+process = cms.Process ('SINGLEPCRNOJETSELSKIM', Run3)
 process.load ('FWCore.MessageService.MessageLogger_cfi')
 # process.MessageLogger.cerr.FwkReport.reportEvery = int(nEvents/10)
 process.MessageLogger.cerr.FwkReport.reportEvery = 1
@@ -28,7 +31,7 @@ process.source = cms.Source ("PoolSource",
 )
 
 process.TFileService = cms.Service ('TFileService',
-    fileName = cms.string (lepton + '_zToLepProbeTrk_outputHistograms.root')
+    fileName = cms.string (lepton + '_singLepCRNoJetSelSkim_outputHistograms.root')
 )
 
 process.options.SkipEvent = cms.untracked.vstring('ProductNotFound')
@@ -38,15 +41,18 @@ process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_cff')
 from Configuration.AlCa.GlobalTag import GlobalTag
 process.GlobalTag = GlobalTag(process.GlobalTag, "130X_mcRun3_2022_realistic_postEE_v6", '')
 
-process.zToElecProbeTrkFilter = zToElecProbeTrkFilter_.clone()
-process.zToMuonProbeTrkFilter = zToMuonProbeTrkFilter_.clone()
-process.zToTauEleProbeTrkFilter = zToTauEleProbeTrkFilter_.clone()
-process.zToTauMuProbeTrkFilter = zToTauMuProbeTrkFilter_.clone()
+process.singElecCRNoJetSelSkimFilter = singElecCRNoJetSelSkimFilter_.clone()
+process.singMuonCRNoJetSelSkimFilter = singMuonCRNoJetSelSkimFilter_.clone()
+process.singTauCRNoJetSelSkimFilter = singTauCRNoJetSelSkimFilter_.clone()
 
-if lepton == 'electron': process.filterPath = cms.Path(process.zToElecProbeTrkFilter)
-if lepton == 'muon': process.filterPath = cms.Path(process.zToMuonProbeTrkFilter)
-if lepton == 'tauele': process.filterPath = cms.Path(process.zToTauEleProbeTrkFilter)
-if lepton == 'taumu': process.filterPath = cms.Path(process.zToTauMuProbeTrkFilter)
+if useMETTriggers:
+    process.singElecCRNoJetSelSkimFilter.isMETTriggers = True
+    process.singMuonCRNoJetSelSkimFilter.isMETTriggers = True
+    process.singTauCRNoJetSelSkimFilter.isMETTriggers = True
+
+if 'electron' in lepton: process.filterPath = cms.Path(process.singElecCRNoJetSelSkimFilter)
+if 'muon' in lepton: process.filterPath = cms.Path(process.singMuonCRNoJetSelSkimFilter)
+if 'tau' in lepton: process.filterPath = cms.Path(process.singTauCRNoJetSelSkimFilter)
 
 from Configuration.EventContent.EventContent_cff import MINIAODSIMEventContent
 process.EXODisappTrkSkimContent = MINIAODSIMEventContent.clone()
@@ -63,7 +69,7 @@ process.MINIAODSIMoutput = cms.OutputModule("PoolOutputModule",
     dropMetaData = cms.untracked.string('ALL'),
     eventAutoFlushCompressedSize = cms.untracked.int32(-900),
     fastCloning = cms.untracked.bool(False),
-    fileName = cms.untracked.string('file:' + lepton + '_zToLepProbeTrk_selected.root'),
+    fileName = cms.untracked.string('file:' + lepton + '_singLepCRNoJetSelSkim_selected.root'),
     outputCommands = process.EXODisappTrkSkimContent.outputCommands,
     overrideBranchesSplitLevel = cms.untracked.VPSet(
         cms.untracked.PSet(

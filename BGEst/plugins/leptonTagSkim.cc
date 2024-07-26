@@ -230,7 +230,7 @@ bool leptonTagSkim<T>::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
   edm::Handle<std::vector<pat::TriggerObjectStandAlone> > triggerObjs;
   iEvent.getByToken(trigobjsToken_, triggerObjs);
 
-  if(helperFunctions::passHLTPath(iEvent,triggerBitsHLT,HLTName_)) {passSel[0] = true; passCut[0] = true;}
+  if(helperFunctions::passLepHLTPath(iEvent,triggerBitsHLT,HLTName_)) {passSel[0] = true; passCut[0] = true;}
 
   if(helperFunctions::passMETFilters(iEvent,triggerBitsPAT)) {passSel[1] = true; if(passCut[0]) passCut[1] = true;}
 

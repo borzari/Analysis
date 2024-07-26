@@ -30,19 +30,21 @@ This has the BackgroundEstimation, StandardAnalysis and TriggerAnalysis selectio
       - Compared with 100k events and everything worked fine
    - Implemented all fiducial selections using 2018 maps
       - Muon and ECAL will be used for run 3; electron will be changed to the ML approach
+   - Implemented leptonTagPt55 leptonTagPt55MetTrig selections
+      - Compared with 100k events and everything worked fine
+- Implemented crab config file to run BGEst selections
 
 ## Ongoing for BackgroundEstimation
 
-- Implementing leptonTagPt55 leptonTagPt55MetTrig selections to compare with original
-   - The only difference is the MET triggers, so only one selection might be used
+- Determining Nctrl, Pveto, Poffline and Ptrigger for all leptons and nLayers
+   - Using this repo to calculate, developing a calculation script
+   - Estimate BG for all types and compare with data
 - Implementing a way to add leptons SFs to have the correct plots; most probably will rely on passing the .root files with the SFs for the distinct lepton cases
 
 ## TODO for BackgroundEstimation
 
 - Charged leptons
    - Implement distinct layer signal regions
-   - Determine Nctrl, Pveto, Poffline and Ptrigger for all leptons and nLayers (this point might be done using the original analysis repo)
-      - Estimate BG for all types and compare with data
    - Implement systematic uncertainties
       - Poffline and Ptrigger uncertainties
 - Fake tracks
@@ -51,7 +53,6 @@ This has the BackgroundEstimation, StandardAnalysis and TriggerAnalysis selectio
       - Estimate BG for all types and compare with data
    - Implement systematic uncertainties
       - Control region uncertainty and transfer factor uncertainties
-
 
 ## Done for StandardAnalysis
 

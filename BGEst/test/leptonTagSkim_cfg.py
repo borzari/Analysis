@@ -5,7 +5,7 @@ from Analysis.BGEst.leptonTagSkim_cfi import *
 ##### Set up process #####
 ###########################################################
 
-nEvents = 100000
+nEvents = 10000
 
 lepton = 'electron'
 # lepton = 'muon'

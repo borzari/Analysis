@@ -18,6 +18,7 @@
 #include "TLorentzVector.h"
 #include "TTree.h"
 #include "TMath.h"
+#include "TVector2.h"
 
 // user include files
 #include "FWCore/Framework/interface/Frameworkfwd.h"
@@ -90,7 +91,51 @@ class helperFunctions {
 
   public:
 
-  static bool passHLTPath(const edm::Event &event, const edm::Handle<edm::TriggerResults> &triggerBits, const std::string &HLTName)
+  static bool passMETHLTPath(const edm::Event &event, const edm::Handle<edm::TriggerResults> &triggerBits)
+  {
+
+    Int_t pass_HLT_MET105_IsoTrk50 = 0;
+    Int_t pass_HLT_MET120_IsoTrk50 = 0;
+    Int_t pass_HLT_PFMET105_IsoTrk50 = 0;
+    Int_t pass_HLT_PFMET120_PFMHT120_IDTight = 0;
+    Int_t pass_HLT_PFMET130_PFMHT130_IDTight = 0;
+    Int_t pass_HLT_PFMET140_PFMHT140_IDTight = 0;
+    Int_t pass_HLT_PFMETNoMu120_PFMHTNoMu120_IDTight_PFHT60 = 0;
+    Int_t pass_HLT_PFMETNoMu110_PFMHTNoMu110_IDTight_FilterHF = 0;
+    Int_t pass_HLT_PFMETNoMu120_PFMHTNoMu120_IDTight_FilterHF = 0;
+    Int_t pass_HLT_PFMETNoMu130_PFMHTNoMu130_IDTight_FilterHF = 0;
+    Int_t pass_HLT_PFMETNoMu140_PFMHTNoMu140_IDTight_FilterHF = 0;
+    Int_t pass_HLT_PFMETNoMu120_PFMHTNoMu120_IDTight = 0;
+    Int_t pass_HLT_PFMETNoMu130_PFMHTNoMu130_IDTight = 0;
+    Int_t pass_HLT_PFMETNoMu140_PFMHTNoMu140_IDTight = 0;
+    Int_t pass_HLT_PFMET120_PFMHT120_IDTight_PFHT60 = 0;
+
+    const edm::TriggerNames &allTriggerNamesHLT = event.triggerNames(*triggerBits);
+
+    for(unsigned i = 0; i < allTriggerNamesHLT.size(); i++) {
+      std::string thisName = allTriggerNamesHLT.triggerName(i);
+      if (thisName.find("HLT_MET105_IsoTrk50_v") == 0) pass_HLT_MET105_IsoTrk50 = triggerBits->accept(i);
+      if (thisName.find("HLT_MET120_IsoTrk50_v") == 0) pass_HLT_MET120_IsoTrk50 = triggerBits->accept(i);
+      if (thisName.find("HLT_PFMET105_IsoTrk50_v") == 0) pass_HLT_PFMET105_IsoTrk50 = triggerBits->accept(i);
+      if (thisName.find("HLT_PFMET120_PFMHT120_IDTight_v") == 0) pass_HLT_PFMET120_PFMHT120_IDTight = triggerBits->accept(i);
+      if (thisName.find("HLT_PFMET130_PFMHT130_IDTight_v") == 0) pass_HLT_PFMET130_PFMHT130_IDTight = triggerBits->accept(i);
+      if (thisName.find("HLT_PFMET140_PFMHT140_IDTight_v") == 0) pass_HLT_PFMET140_PFMHT140_IDTight = triggerBits->accept(i);
+      if (thisName.find("HLT_PFMETNoMu120_PFMHTNoMu120_IDTight_PFHT60_v") == 0) pass_HLT_PFMETNoMu120_PFMHTNoMu120_IDTight_PFHT60 = triggerBits->accept(i);
+      if (thisName.find("HLT_PFMETNoMu110_PFMHTNoMu110_IDTight_FilterHF_v") == 0) pass_HLT_PFMETNoMu110_PFMHTNoMu110_IDTight_FilterHF = triggerBits->accept(i);
+      if (thisName.find("HLT_PFMETNoMu120_PFMHTNoMu120_IDTight_FilterHF_v") == 0) pass_HLT_PFMETNoMu120_PFMHTNoMu120_IDTight_FilterHF = triggerBits->accept(i);
+      if (thisName.find("HLT_PFMETNoMu130_PFMHTNoMu130_IDTight_FilterHF_v") == 0) pass_HLT_PFMETNoMu130_PFMHTNoMu130_IDTight_FilterHF = triggerBits->accept(i);
+      if (thisName.find("HLT_PFMETNoMu140_PFMHTNoMu140_IDTight_FilterHF_v") == 0) pass_HLT_PFMETNoMu140_PFMHTNoMu140_IDTight_FilterHF = triggerBits->accept(i);
+      if (thisName.find("HLT_PFMETNoMu120_PFMHTNoMu120_IDTight_v") == 0) pass_HLT_PFMETNoMu120_PFMHTNoMu120_IDTight = triggerBits->accept(i);
+      if (thisName.find("HLT_PFMETNoMu130_PFMHTNoMu130_IDTight_v") == 0) pass_HLT_PFMETNoMu130_PFMHTNoMu130_IDTight = triggerBits->accept(i);
+      if (thisName.find("HLT_PFMETNoMu140_PFMHTNoMu140_IDTight_v") == 0) pass_HLT_PFMETNoMu140_PFMHTNoMu140_IDTight = triggerBits->accept(i);
+      if (thisName.find("HLT_PFMET120_PFMHT120_IDTight_PFHT60_v") == 0) pass_HLT_PFMET120_PFMHT120_IDTight_PFHT60 = triggerBits->accept(i);
+    }
+
+    return (pass_HLT_MET105_IsoTrk50 == 1 || pass_HLT_MET120_IsoTrk50 == 1 || pass_HLT_PFMET105_IsoTrk50 == 1 || pass_HLT_PFMET120_PFMHT120_IDTight == 1 || pass_HLT_PFMET130_PFMHT130_IDTight == 1 || pass_HLT_PFMET140_PFMHT140_IDTight == 1 || pass_HLT_PFMETNoMu120_PFMHTNoMu120_IDTight_PFHT60 == 1 || pass_HLT_PFMETNoMu110_PFMHTNoMu110_IDTight_FilterHF == 1 || pass_HLT_PFMETNoMu120_PFMHTNoMu120_IDTight_FilterHF == 1 || pass_HLT_PFMETNoMu130_PFMHTNoMu130_IDTight_FilterHF == 1 || pass_HLT_PFMETNoMu140_PFMHTNoMu140_IDTight_FilterHF == 1 || pass_HLT_PFMETNoMu120_PFMHTNoMu120_IDTight == 1 || pass_HLT_PFMETNoMu130_PFMHTNoMu130_IDTight == 1 || pass_HLT_PFMETNoMu140_PFMHTNoMu140_IDTight == 1 || pass_HLT_PFMET120_PFMHT120_IDTight_PFHT60 == 1);
+
+  }
+
+  static bool passLepHLTPath(const edm::Event &event, const edm::Handle<edm::TriggerResults> &triggerBits, const std::string &HLTName)
   {
 
     Int_t pass_HLT = 0;
@@ -156,6 +201,20 @@ class helperFunctions {
     return false;
   }
 
+  static bool jetPassesTightLepVeto(const pat::Jet &jet)
+  {
+    // https://twiki.cern.ch/twiki/bin/view/CMS/JetID13p6TeV; using CHS jet as it is the type of slimmedJets
+    return((jet.neutralHadronEnergyFraction()<0.99 && jet.neutralEmEnergyFraction()<0.90 && (jet.chargedMultiplicity() + jet.neutralMultiplicity())>1 && jet.muonEnergyFraction()<0.8 && jet.chargedHadronEnergyFraction()>0.01 && jet.chargedMultiplicity()>0 && jet.chargedEmEnergyFraction()<0.80 && fabs(jet.eta())<=2.6) || (jet.neutralHadronEnergyFraction()<0.90 && jet.neutralEmEnergyFraction()<0.99 && jet.muonEnergyFraction()<0.8 && jet.chargedMultiplicity()>0 && jet.chargedEmEnergyFraction()<0.80 && fabs(jet.eta())>2.6 && fabs(jet.eta())<=2.7) || (jet.neutralHadronEnergyFraction()<0.99 && jet.neutralEmEnergyFraction()<0.99 && jet.neutralMultiplicity()>=1 && fabs(jet.eta())>2.7 && fabs(jet.eta())<=3.0) || (jet.neutralEmEnergyFraction()<0.4 && jet.neutralMultiplicity()>10 && fabs(jet.eta())>3.0 && fabs(jet.eta())<=5.0));
+
+  }
+
+  static bool IsValidJet(const pat::Jet &jet) {
+    if (!(jet.pt() > 30))         return false;
+    if (!(fabs(jet.eta()) < 4.5)) return false;
+    if (!jetPassesTightLepVeto(jet)) return false;
+    return true;
+  }
+
   static bool elecD0 (const pat::Electron& electron, const reco::Vertex& pv){
     return ((fabs (electron.superCluster()->eta()) <= 1.479) && (fabs (((electron.vx() - pv.x()) * electron.py() - (electron.vy() - pv.y()) * electron.px()) / electron.pt()) < 0.05)) || ((fabs (electron.superCluster()->eta()) >  1.479) && (fabs (((electron.vx() - pv.x()) * electron.py() - (electron.vy() - pv.y()) * electron.px()) / electron.pt()) < 0.10));
   }
@@ -180,20 +239,23 @@ class helperFunctions {
   static void extractFiducialMap (EtaPhiList &vetoList)
   {
 
-    edm::FileInPath histFile;
+    std::string histFile;
     std::string era = "";
     std::string beforeVetoHistName = "beforeVeto";
     std::string afterVetoHistName = "afterVeto";
     double thresholdForVeto = 0.0;
 
-    if(std::is_same<T, pat::Electron>::value) histFile = edm::FileInPath("Analysis/Helper/data/electronFiducialMap_2018_data.root");
-    if(std::is_same<T, pat::Muon>::value) histFile = edm::FileInPath("Analysis/Helper/data/muonFiducialMap_2018_data.root");
+    // if(std::is_same<T, pat::Electron>::value) histFile = "Analysis/Helper/data/electronFiducialMap_2018_data.root";
+    // if(std::is_same<T, pat::Muon>::value) histFile = "Analysis/Helper/data/muonFiducialMap_2018_data.root";
 
-    std::cout << "Attempting to extract \"" << beforeVetoHistName << "\" and \"" << afterVetoHistName << "\" from \"" << histFile.fullPath () << "\"..." << std::endl;
-    TFile *fin = TFile::Open (histFile.fullPath ().c_str());
+    if(std::is_same<T, pat::Electron>::value) histFile = "electronFiducialMap_2018_data.root";
+    if(std::is_same<T, pat::Muon>::value) histFile = "muonFiducialMap_2018_data.root";
+
+    std::cout << "Attempting to extract \"" << beforeVetoHistName << "\" and \"" << afterVetoHistName << "\" from \"" << histFile << "\"..." << std::endl;
+    TFile *fin = TFile::Open (histFile.c_str());
     if (!fin || fin->IsZombie ())
       {
-        std::cout << "No file named \"" << histFile.fullPath () << "\" found. Skipping..." << std::endl;;
+        std::cout << "No file named \"" << histFile << "\" found. Skipping..." << std::endl;
         return;
       }
 
@@ -699,6 +761,288 @@ class helperFunctions {
     double dPhi = deltaPhi (lepton.phi(), met.phi());
 	  return sqrt(2.0 * lepton.pt() * met.pt() * (1.0 - cos(dPhi)));
     
+  }
+
+  template<class T>
+  static const pat::TriggerObjectStandAlone * getMatchedTriggerObject (const edm::Event &event, const edm::TriggerResults &triggers, const T &obj, const std::vector<pat::TriggerObjectStandAlone> &trigObjs, const std::string &collection, const std::string &filter, const double dR = 0.1)
+  {
+    if (collection == "")
+      return NULL;
+    double minDR = -1.0;
+    int i = -1, iMinDR = -1;
+    for (auto trigObj : trigObjs)
+      {
+        i++;
+        trigObj.unpackNamesAndLabels(event, triggers);
+        if (trigObj.collection () != collection)
+          continue;
+        if (filter != "")
+          {
+            bool flag = false;
+            for (const auto &filterLabel : trigObj.filterLabels ())
+              if (filterLabel == filter)
+                {
+                  flag = true;
+                  break;
+                }
+            if (!flag)
+              continue;
+          }
+        double currentDR = deltaR (obj, trigObj);
+        if (currentDR > dR)
+          continue;
+
+        if (minDR < 0 || currentDR < minDR)
+          {
+            minDR = currentDR;
+            iMinDR = i;
+          }
+      }
+    if (iMinDR >= 0)
+      return &trigObjs.at (iMinDR);
+    return NULL;
+  }
+
+  static bool getTriggerObjects (const edm::Event &event, const edm::TriggerResults &triggers, const std::vector<pat::TriggerObjectStandAlone> &trigObjs, const std::string &collection, const std::string &filter, std::vector<const pat::TriggerObjectStandAlone *> &selectedTrigObjs)
+  {
+    if (collection == "")
+      {
+        selectedTrigObjs.push_back (NULL);
+        return false;
+      }
+    std::vector<const pat::TriggerObjectStandAlone *> trigObjsToAdd;
+    int i = -1;
+    for (auto trigObj : trigObjs)
+      {
+        i++;
+        trigObj.unpackNamesAndLabels(event, triggers);
+        if (trigObj.collection () != collection)
+          continue;
+        if (filter != "")
+          {
+            bool flag = false;
+            for (const auto &filterLabel : trigObj.filterLabels ())
+              if (filterLabel == filter)
+                {
+                  flag = true;
+                  break;
+                }
+            if (!flag)
+              continue;
+          }
+
+        trigObjsToAdd.push_back (&trigObjs.at (i));
+      }
+    if (!trigObjsToAdd.empty ())
+      selectedTrigObjs.insert (selectedTrigObjs.end (), trigObjsToAdd.begin (), trigObjsToAdd.end ());
+    else
+      selectedTrigObjs.push_back (NULL);
+    return (!trigObjsToAdd.empty ());
+  }
+
+  static const double getModifiedMissingEnergy (const TVector2 &x, const TVector2 &y, const bool muonsCountedAsVisible, const double shift)
+  {
+    TVector2 z;
+    z.SetMagPhi (shift, y.Phi ());
+    if (muonsCountedAsVisible)
+      return (x + y - z).Mod ();
+    return x.Mod ();
+  }
+
+  static bool triggerObjectExists (const edm::Event &event, const edm::TriggerResults &triggers, const std::vector<pat::TriggerObjectStandAlone> &trigObjs, const std::string &collection, const std::string &filter)
+  {
+    if (collection == "")
+      return false;
+    for (auto trigObj : trigObjs)
+      {
+        trigObj.unpackNamesAndLabels(event, triggers);
+        if (trigObj.collection () != collection)
+          continue;
+        if (filter != "")
+          {
+            bool flag = false;
+            for (const auto &filterLabel : trigObj.filterLabels ())
+              if (filterLabel == filter)
+                {
+                  flag = true;
+                  break;
+                }
+            if (!flag)
+              continue;
+          }
+
+        return true;
+      }
+    return false;
+  }
+
+  template<class T>
+  static std::vector<bool> passMETTriggers (const edm::Event &event, edm::Handle<edm::TriggerResults> &triggers, edm::Handle<std::vector<pat::TriggerObjectStandAlone> > &triggerObjects, edm::Handle<std::vector<T> > &tags, std::string tagCollection)
+  {
+
+    std::vector<bool> passesVec;
+
+    if (!triggers.isValid () || !triggerObjects.isValid () || !tags.isValid ()){
+      passesVec.push_back(false);
+      passesVec.push_back(false);
+      return passesVec;
+    }
+
+    bool passes = false;
+    bool passesUp = false;
+
+    std::vector<std::string> filterCategories = {"met", "metClean", "metCleanBH", "metCleanUsingJetID", "mht", "pfMHTTightID", "pfMET", "pfMHT", "pfMETNoMu", "pfMHTNoMu", "pfMHTNoMuCleaned", "pfHT"};
+
+    std::map<std::string, std::vector<std::string> > trigObjCollections;
+    std::map<std::string, std::vector<double> > trigObjThresholds;
+    std::map<std::string, std::vector<std::string> > trigObjJetsForTag;
+    std::map<std::string, bool> muonsCountedAsVisible;
+
+    std::vector<std::string> additionalCollections = {"hltTrk50Filter::HLT","hltTrk50Filter::HLT","hltTrk50Filter::HLT","","","","","","","","","","","",""};
+    std::vector<std::string> additionalFilters = {"hltTrk50Filter","hltTrk50Filter","hltTrk50Filter::HLT","","","","","","","","","","","",""};
+
+    trigObjCollections["met"] = {"hltMet::HLT","hltMet::HLT","hltMet::HLT","hltMet::HLT","hltMet::HLT","hltMet::HLT","hltMet::HLT","hltMet::HLT","hltMet::HLT","hltMet::HLT","hltMet::HLT","hltMet::HLT","hltMet::HLT","hltMet::HLT","hltMet::HLT"};
+    trigObjCollections["metClean"] = {"","","","","","","","","","","","","","",""};
+    trigObjCollections["metCleanBH"] = {"","","","","","","","","","","","","","",""};
+    trigObjCollections["metCleanUsingJetID"] = {"","","","","","","","","","","","","","",""};
+    trigObjCollections["mht"] = {"","","","hltMht::HLT","hltMht::HLT","hltMht::HLT","hltMht::HLT","hltMht::HLT","hltMht::HLT","hltMht::HLT","hltMht::HLT","hltMht::HLT","hltMht::HLT","hltMht::HLT","hltMht::HLT"};
+    trigObjCollections["pfMHTTightID"] = {"","","","hltPFMHTTightID::HLT","hltPFMHTTightID::HLT","hltPFMHTTightID::HLT","","","","","","","","","hltPFMHTTightID::HLT"};
+    trigObjCollections["pfMET"] = {"","","hltPFMETProducer::HLT","hltPFMETProducer::HLT","hltPFMETProducer::HLT","hltPFMETProducer::HLT","","","","","","","","","hltPFMETProducer::HLT"};
+    trigObjCollections["pfMHT"] = {"","","","","","","","","","","","","","",""};
+    trigObjCollections["pfMETNoMu"] = {"","","","","","","hltPFMETNoMuProducer::HLT","hltPFMETNoMuProducer::HLT","hltPFMETNoMuProducer::HLT","hltPFMETNoMuProducer::HLT","hltPFMETNoMuProducer::HLT","hltPFMETNoMuProducer::HLT","hltPFMETNoMuProducer::HLT","hltPFMETNoMuProducer::HLT",""};
+    trigObjCollections["pfMHTNoMu"] = {"","","","","","","hltPFMHTNoMuTightID::HLT","","","","","hltPFMHTNoMuTightID::HLT","hltPFMHTNoMuTightID::HLT","hltPFMHTNoMuTightID::HLT",""};
+    trigObjCollections["pfMHTNoMuCleaned"] = {"","","","","","","","hltPFMHTNoMuTightIDHFCleaned::HLT","hltPFMHTNoMuTightIDHFCleaned::HLT","hltPFMHTNoMuTightIDHFCleaned::HLT","hltPFMHTNoMuTightIDHFCleaned::HLT","","","",""};
+    trigObjCollections["pfHT"] = {"","","","","","","hltPFHTJet30::HLT","","","","","","","","hltPFHTJet30::HLT"};
+
+    trigObjThresholds["met"] = {105.0, 120.0, 75.0, 90.0, 100.0, 110.0, 90.0, 80.0, 90.0, 100.0, 110.0, 90.0, 100.0, 110.0, 90.0};
+    trigObjThresholds["metClean"] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+    trigObjThresholds["metCleanBH"] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+    trigObjThresholds["metCleanUsingJetID"] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+    trigObjThresholds["mht"] = {0.0, 0.0, 0.0, 90.0, 100.0, 110.0, 90.0, 80.0, 90.0, 100.0, 110.0, 90.0, 100.0, 110.0, 90.0};
+    trigObjThresholds["pfMHTTightID"] = {0.0, 0.0, 0.0, 120.0, 130.0, 140.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 120.0};
+    trigObjThresholds["pfMET"] = {0.0, 0.0, 105.0, 120.0, 130.0, 140.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 120.0};
+    trigObjThresholds["pfMHT"] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+    trigObjThresholds["pfMETNoMu"] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 120.0, 110.0, 120.0, 130.0, 140.0, 120.0, 130.0, 140.0, 0.0};
+    trigObjThresholds["pfMHTNoMu"] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 120.0, 0.0, 0.0, 0.0, 0.0, 120.0, 130.0, 140.0, 0.0};
+    trigObjThresholds["pfMHTNoMuCleaned"] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 110.0, 120.0, 130.0, 140.0, 0.0, 0.0, 0.0, 0.0};
+    trigObjThresholds["pfHT"] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 60.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 60.0};
+
+    trigObjJetsForTag["met"] = {"","","","","","","","","","","","","","",""};
+    trigObjJetsForTag["metClean"] = {"","","","","","","","","","","","","","",""};
+    trigObjJetsForTag["metCleanBH"] = {"","","","","","","","","","","","","","",""};
+    trigObjJetsForTag["metCleanUsingJetID"] = {"","","","","","","","","","","","","","",""};
+    trigObjJetsForTag["mht"] = {"","","","hltAK4CaloJetsCorrectedIDPassed::HLT","hltAK4CaloJetsCorrectedIDPassed::HLT","hltAK4CaloJetsCorrectedIDPassed::HLT","hltAK4CaloJetsCorrectedIDPassed::HLT","hltAK4CaloJetsCorrectedIDPassed::HLT","hltAK4CaloJetsCorrectedIDPassed::HLT","hltAK4CaloJetsCorrectedIDPassed::HLT","hltAK4CaloJetsCorrectedIDPassed::HLT","hltAK4CaloJetsCorrectedIDPassed::HLT","hltAK4CaloJetsCorrectedIDPassed::HLT","hltAK4CaloJetsCorrectedIDPassed::HLT","hltAK4CaloJetsCorrectedIDPassed::HLT"};
+    trigObjJetsForTag["pfMHTTightID"] = {"","","","hltAK4PFJetsTightIDCorrected::HLT","hltAK4PFJetsTightIDCorrected::HLT","hltAK4PFJetsTightIDCorrected::HLT","","","","","","","","","hltAK4PFJetsTightIDCorrected::HLT"};
+    trigObjJetsForTag["pfMET"] = {"","","","","","","","","","","","","","",""};
+    trigObjJetsForTag["pfMHT"] = {"","","","","","","","","","","","","","",""};
+    trigObjJetsForTag["pfMETNoMu"] = {"","","","","","","","","","","","","","",""};
+    trigObjJetsForTag["pfMHTNoMu"] = {"","","","","","","hltAK4PFJetsTightIDCorrected::HLT","","","","","hltAK4PFJetsTightIDCorrected::HLT","hltAK4PFJetsTightIDCorrected::HLT","hltAK4PFJetsTightIDCorrected::HLT",""};
+    trigObjJetsForTag["pfMHTNoMuCleaned"] = {"","","","","","","","hltAK4PFJetsTightIDCorrectedHFCleaned::HLT","hltAK4PFJetsTightIDCorrectedHFCleaned::HLT","hltAK4PFJetsTightIDCorrectedHFCleaned::HLT","hltAK4PFJetsTightIDCorrectedHFCleaned::HLT","","","",""};
+    trigObjJetsForTag["pfHT"] = {"","","","","","","hltAK4PFJetsCorrected::HLT","","","","","","","","hltAK4PFJetsCorrected::HLT"};
+
+    muonsCountedAsVisible["met"] = false;
+    muonsCountedAsVisible["metClean"] = false;
+    muonsCountedAsVisible["metCleanBH"] = false;
+    muonsCountedAsVisible["metCleanUsingJetID"] = false;
+    muonsCountedAsVisible["mht"] = false;
+    muonsCountedAsVisible["pfMHTTightID"] = true;
+    muonsCountedAsVisible["pfMET"] = true;
+    muonsCountedAsVisible["pfMHT"] = true;
+    muonsCountedAsVisible["pfMETNoMu"] = false;
+    muonsCountedAsVisible["pfMHTNoMu"] = false;
+    muonsCountedAsVisible["pfMHTNoMuCleaned"] = false;
+    muonsCountedAsVisible["pfHT"] = false;
+
+    const pat::TriggerObjectStandAlone *hltTag = getMatchedTriggerObject<T> (event, *triggers, tags->at (0), *triggerObjects, tagCollection, "");
+    std::map<std::string, std::vector<const pat::TriggerObjectStandAlone *> > hltFilterObjects, hltJetsForTag;
+    int n = -1;
+    for (const auto &filterCategory : filterCategories)
+      {
+        const std::vector<std::string> &collections = trigObjCollections.at (filterCategory);
+        const std::vector<std::string> &jetsForTag = trigObjJetsForTag.at (filterCategory);
+
+        if (n < 0)
+          n = collections.size ();
+
+        std::vector<const pat::TriggerObjectStandAlone *> &objs = hltFilterObjects[filterCategory];
+        std::vector<const pat::TriggerObjectStandAlone *> &jets = hltJetsForTag[filterCategory];
+
+        for (int i = 0; i < n; i++)
+          {
+            const std::string &collection = collections.at (i);
+            const std::string &jetForTag = jetsForTag.at (i);
+
+            getTriggerObjects (event, *triggers, *triggerObjects, collection, "", objs);
+            jets.push_back (getMatchedTriggerObject<T> (event, *triggers, tags->at (0), *triggerObjects, jetForTag, ""));
+          }
+      }
+
+    std::map<std::string, std::vector<bool> > filterDecisions, filterDecisionsUp;
+    for (const auto &filterCategory : filterCategories)
+      {
+        std::vector<bool> &filterDecision = filterDecisions[filterCategory];
+        std::vector<bool> &filterDecisionUp = filterDecisionsUp[filterCategory];
+
+        const std::vector<const pat::TriggerObjectStandAlone *> &objs = hltFilterObjects.at (filterCategory);
+        const std::vector<const pat::TriggerObjectStandAlone *> &jets = hltJetsForTag.at (filterCategory);
+        const std::vector<double> &thresholds = trigObjThresholds.at (filterCategory);
+
+        for (int i = 0; i < n; i++)
+          {
+            bool flag, flagUp;
+
+            const pat::TriggerObjectStandAlone *tag = (trigObjJetsForTag.at (filterCategory).at (i) == "" ? hltTag : jets.at (i));
+            const pat::TriggerObjectStandAlone *obj = objs.at (i);
+
+            TVector2 x, y;
+            if (!tag)
+              y.Set (0.0, 0.0);
+            else
+              y.Set (tag->px (), tag->py ());
+            if (!obj && trigObjCollections.at (filterCategory).at (i) == "")
+              flag = flagUp = true;
+            else
+              {
+                if (!obj)
+                  x.Set (0.0, 0.0);
+                else
+                  x.Set (obj->px (), obj->py ());
+
+                const double threshold = thresholds.at (i);
+                const double modifiedMissingEnergy = getModifiedMissingEnergy (x, y, muonsCountedAsVisible.at (filterCategory), 0.0);
+                const double modifiedMissingEnergyUp = getModifiedMissingEnergy (x, y, muonsCountedAsVisible.at (filterCategory), 10.0);
+                flag = (modifiedMissingEnergy > threshold);
+                flagUp = (modifiedMissingEnergyUp > threshold);
+              }
+
+            filterDecision.push_back (flag);
+            filterDecisionUp.push_back (flagUp);
+          }
+      }
+
+    for (int i = 0; i < n; i++)
+      {
+        bool triggerPasses = true, triggerPassesUp = true;
+        for (const auto &filterCategory : filterCategories)
+          {
+            triggerPasses = triggerPasses && filterDecisions.at (filterCategory).at (i);
+            triggerPassesUp = triggerPassesUp && filterDecisionsUp.at (filterCategory).at (i);
+          }
+        if (additionalCollections.at (i) != "" && additionalFilters.at (i) != "")
+          {
+            bool filterPasses = triggerObjectExists (event, *triggers, *triggerObjects, additionalCollections.at (i), additionalFilters.at (i));
+            triggerPasses = triggerPasses && filterPasses;
+            triggerPassesUp = triggerPassesUp && filterPasses;
+          }
+        passes = passes || triggerPasses;
+        passesUp = passesUp || triggerPassesUp;
+      }
+
+    passesVec.push_back(passes);
+    passesVec.push_back(passesUp);
+
+    return passesVec;
+
   }
 
 };
