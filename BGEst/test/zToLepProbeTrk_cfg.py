@@ -5,26 +5,28 @@ from Analysis.BGEst.zToLepProbeTrk_cfi import *
 ##### Set up process #####
 ###########################################################
 
-# nEvents = 10000
-nEvents = -1
+nEvents = 10000
+# nEvents = -1
 
-# lepton = 'electron'
+lepton = 'electron'
 # lepton = 'muon'
 # lepton = 'tauele'
-lepton = 'taumu'
+# lepton = 'taumu'
+
+isCRAB = False
 
 from Configuration.Eras.Era_Run3_cff import Run3
 process = cms.Process ('ZTOLEPPROBETRK', Run3)
 process.load ('FWCore.MessageService.MessageLogger_cfi')
-# process.MessageLogger.cerr.FwkReport.reportEvery = int(nEvents/10)
-process.MessageLogger.cerr.FwkReport.reportEvery = 1
+process.MessageLogger.cerr.FwkReport.reportEvery = int(nEvents/10)
+# process.MessageLogger.cerr.FwkReport.reportEvery = 1
 
 process.maxEvents = cms.untracked.PSet (
     input = cms.untracked.int32 (nEvents)
 )
 
 process.source = cms.Source ("PoolSource",
-    fileNames = cms.untracked.vstring ("file:/home/brenoorzari/CMSSW_13_0_13/src/Analysis/BGEst/data/selected.root"),
+    fileNames = cms.untracked.vstring ("file:/home/brenoorzari/selected.root"),
 )
 
 process.TFileService = cms.Service ('TFileService',
@@ -42,6 +44,12 @@ process.zToElecProbeTrkFilter = zToElecProbeTrkFilter_.clone()
 process.zToMuonProbeTrkFilter = zToMuonProbeTrkFilter_.clone()
 process.zToTauEleProbeTrkFilter = zToTauEleProbeTrkFilter_.clone()
 process.zToTauMuProbeTrkFilter = zToTauMuProbeTrkFilter_.clone()
+
+if isCRAB:
+    process.zToElecProbeTrkFilter.isCRAB = True
+    process.zToMuonProbeTrkFilter.isCRAB = True
+    process.zToTauEleProbeTrkFilter.isCRAB = True
+    process.zToTauMuProbeTrkFilter.isCRAB = True
 
 if lepton == 'electron': process.filterPath = cms.Path(process.zToElecProbeTrkFilter)
 if lepton == 'muon': process.filterPath = cms.Path(process.zToMuonProbeTrkFilter)

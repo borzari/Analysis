@@ -84,6 +84,7 @@
 #include "FWCore/PluginManager/interface/ModuleDef.h"
 
 #include "Analysis/Helper/interface/helperFunctions.h"
+#include "Analysis/Helper/interface/plotPrintFunctions.h"
 //
 // class declaration
 //
@@ -124,6 +125,7 @@ private:
   edm::ESGetToken<EcalChannelStatus, EcalChannelStatusRcd> ecalStatusToken_;
   edm::EDGetTokenT<bool> ecalBadCalibFilterUpdateToken_;
   std::string HLTName_;
+  bool isCRAB_;
   bool isMETTriggers_;
 
   edm::ESHandle<CaloGeometry> caloGeometry;
@@ -165,12 +167,25 @@ singLepCRNoJetSelSkim<T>::singLepCRNoJetSelSkim(const edm::ParameterSet& iConfig
   //now do what ever initialization is needed
 
   HLTName_ = iConfig.getParameter<std::string>("HLTName");
+  isCRAB_ = iConfig.getParameter<bool>("isCRAB");
   isMETTriggers_ = iConfig.getParameter<bool>("isMETTriggers");
 
   if(isMETTriggers_) HLTName_ = "MET Triggers";
 
-  helperFunctions::extractFiducialMap<pat::Electron>(vetoListElec);
-  helperFunctions::extractFiducialMap<pat::Muon>(vetoListMu);
+  std::string elecFile = "";
+  std::string muonFile = "";
+
+  if(isCRAB_){
+    elecFile = "electronFiducialMap_2018_data.root";
+    muonFile = "muonFiducialMap_2018_data.root";
+  }
+  else{
+    elecFile = "/home/brenoorzari/CMSSW_13_0_13/src/Analysis/Helper/data/electronFiducialMap_2018_data.root";
+    muonFile = "/home/brenoorzari/CMSSW_13_0_13/src/Analysis/Helper/data/muonFiducialMap_2018_data.root";
+  }
+
+  helperFunctions::extractFiducialMap<pat::Electron>(vetoListElec,elecFile);
+  helperFunctions::extractFiducialMap<pat::Muon>(vetoListMu,muonFile);
 
   commonCuts = {
     "Total",
@@ -276,49 +291,9 @@ singLepCRNoJetSelSkim<T>::singLepCRNoJetSelSkim(const edm::ParameterSet& iConfig
 
 template<class T>
 singLepCRNoJetSelSkim<T>::~singLepCRNoJetSelSkim() {
-  // do anything here that needs to be done at desctruction time
-  // (e.g. close files, deallocate resources etc.)
-  int maxSizeCutName = 0;
-  int maxSizeEvents = 0;
-  int maxSizeCutFlow = 0;
-  double maxValue = double(oneDHists_.at("selection")->GetBinContent(1));
 
-  for(int i = 1; i <= int(oneDHists_.at("cutflow")->GetNbinsX()); i++){
-    std::string label = oneDHists_.at("cutflow")->GetXaxis()->GetLabels()->At(i-1)->GetName();
-    std::string numEvents = std::to_string(oneDHists_.at("cutflow")->GetBinContent(i));
-    std::string numCutflow = std::to_string(double(oneDHists_.at("cutflow")->GetBinContent(i)) * 100.0 / maxValue) + "%";
-    std::string numSelection = std::to_string(double(oneDHists_.at("selection")->GetBinContent(i)) * 100.0 / maxValue) + "%";
-    if(int(label.size()) > maxSizeCutName) maxSizeCutName = int(label.size());
-    if(int(numEvents.size()) > maxSizeEvents) maxSizeEvents = int(numEvents.size());
-    if(int(numCutflow.size()) > maxSizeCutFlow) maxSizeCutFlow = int(numCutflow.size());
-  }
+  plotPrintFunctions::printCuts(oneDHists_);
 
-  std::string cut = "Cut Value";
-  std::string events = "Events";
-  std::string cumul = "Cumul.";
-  std::string indiv = "Indiv.";
-  std::cout << cut << std::string((maxSizeCutName - int(cut.size()) + 3),' ') << events << std::string((maxSizeEvents - int(events.size()) + 3),' ') << cumul << std::string((maxSizeCutFlow - int(cumul.size()) + 3),' ') << indiv << std::endl;
-
-  for(int i = 1; i <= int(oneDHists_.at("cutflow")->GetNbinsX()); i++){
-    std::cout << std::setprecision(3) << std::fixed;
-    std::string label = oneDHists_.at("cutflow")->GetXaxis()->GetLabels()->At(i-1)->GetName();
-    std::string numEvents = std::to_string(oneDHists_.at("cutflow")->GetBinContent(i));
-    std::string numCutflow = std::to_string(double(oneDHists_.at("cutflow")->GetBinContent(i)) * 100.0 / maxValue) + "%";
-    std::string numSelection = std::to_string(double(oneDHists_.at("selection")->GetBinContent(i)) * 100.0 / maxValue) + "%";
-    int sizeLabel = int(label.size());
-    int sizeEvents = int(numEvents.size());
-    int sizeCutflow = int(numCutflow.size());
-    int nBlankLabel = maxSizeCutName - sizeLabel + 3;
-    int nBlankEvents = maxSizeEvents - sizeEvents + 8; // +8 here because five places are going to be removed below
-    int nBlankCutflow = maxSizeCutFlow - sizeCutflow + 6; // +6 here because three places are going to be removed below
-    numEvents.erase(numEvents.size() - 5, 5);
-    numCutflow.erase(numCutflow.size() - 4, 3);
-    numSelection.erase(numSelection.size() - 4, 3);
-    std::cout << label << std::string(nBlankLabel,' ') << numEvents << std::string(nBlankEvents,' ') << numCutflow << std::string(nBlankCutflow,' ') << numSelection << std::endl;
-  }
-
-  //
-  // please remove this method altogether if it would be left empty
 }
 
 //
@@ -803,6 +778,7 @@ void singLepCRNoJetSelSkim<T>::fillDescriptions(edm::ConfigurationDescriptions& 
   desc.add<edm::InputTag>("triggersPAT", edm::InputTag("TriggerResults","","PAT"));
   desc.add<edm::InputTag>("triggersHLT", edm::InputTag("TriggerResults","","HLT"));
   desc.add<std::string>("HLTName", std::string("placeholderHLT"));
+  desc.add<bool>("isCRAB", bool(false));
   desc.add<bool>("isMETTriggers", bool(false));
   desc.add<edm::InputTag>("trigobjs", edm::InputTag("slimmedPatTrigger"));
   desc.add<edm::InputTag>("ecalBadCalibReducedMINIAODFilter", edm::InputTag("ecalBadCalibReducedMINIAODFilter"));

@@ -30,7 +30,7 @@ This has the BackgroundEstimation, StandardAnalysis and TriggerAnalysis selectio
       - Compared with 100k events and everything worked fine
    - Implemented all fiducial selections using 2018 maps
       - Muon and ECAL will be used for run 3; electron will be changed to the ML approach
-   - Implemented leptonTagPt55 leptonTagPt55MetTrig selections
+   - Implemented leptonTagPt35 leptonTagPt35MetTrig selections
       - Compared with 100k events and everything worked fine
 - Implemented crab config file to run BGEst selections
 

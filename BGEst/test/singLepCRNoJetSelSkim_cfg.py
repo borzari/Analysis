@@ -12,6 +12,7 @@ lepton = 'electron'
 # lepton = 'muon'
 # lepton = 'tau'
 
+isCRAB = False
 useMETTriggers = True
 
 if useMETTriggers: lepton = "METTriggers_" + lepton
@@ -44,6 +45,11 @@ process.GlobalTag = GlobalTag(process.GlobalTag, "130X_mcRun3_2022_realistic_pos
 process.singElecCRNoJetSelSkimFilter = singElecCRNoJetSelSkimFilter_.clone()
 process.singMuonCRNoJetSelSkimFilter = singMuonCRNoJetSelSkimFilter_.clone()
 process.singTauCRNoJetSelSkimFilter = singTauCRNoJetSelSkimFilter_.clone()
+
+if isCRAB:
+    process.singElecCRNoJetSelSkimFilter.isCRAB = True
+    process.singMuonCRNoJetSelSkimFilter.isCRAB = True
+    process.singTauCRNoJetSelSkimFilter.isCRAB = True
 
 if useMETTriggers:
     process.singElecCRNoJetSelSkimFilter.isMETTriggers = True

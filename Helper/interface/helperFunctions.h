@@ -236,20 +236,13 @@ class helperFunctions {
   }
 
   template<typename T>
-  static void extractFiducialMap (EtaPhiList &vetoList)
+  static void extractFiducialMap (EtaPhiList &vetoList, std::string histFile)
   {
 
-    std::string histFile;
     std::string era = "";
     std::string beforeVetoHistName = "beforeVeto";
     std::string afterVetoHistName = "afterVeto";
     double thresholdForVeto = 0.0;
-
-    // if(std::is_same<T, pat::Electron>::value) histFile = "Analysis/Helper/data/electronFiducialMap_2018_data.root";
-    // if(std::is_same<T, pat::Muon>::value) histFile = "Analysis/Helper/data/muonFiducialMap_2018_data.root";
-
-    if(std::is_same<T, pat::Electron>::value) histFile = "electronFiducialMap_2018_data.root";
-    if(std::is_same<T, pat::Muon>::value) histFile = "muonFiducialMap_2018_data.root";
 
     std::cout << "Attempting to extract \"" << beforeVetoHistName << "\" and \"" << afterVetoHistName << "\" from \"" << histFile << "\"..." << std::endl;
     TFile *fin = TFile::Open (histFile.c_str());
@@ -369,8 +362,9 @@ class helperFunctions {
 
   static int getChannelStatusMaps (edm::ESHandle<EcalChannelStatus> &ecalStatus, const edm::ESHandle<CaloGeometry>& caloGeometry, std::map<DetId, std::vector<double> > &EcalAllDeadChannelsValMap, std::map<DetId, std::vector<int> > &EcalAllDeadChannelsBitMap)
   {
+    bool makeHist = false;
     EcalAllDeadChannelsValMap.clear(); EcalAllDeadChannelsBitMap.clear();
-    TH2D *badChannels = (false ? new TH2D ("badChannels", ";#eta;#phi", 360, -3.0, 3.0, 360, -3.2, 3.2) : NULL);
+    TH2D *badChannels = (makeHist ? new TH2D ("badChannels", ";#eta;#phi", 360, -3.0, 3.0, 360, -3.2, 3.2) : NULL);
 
   // Loop over EB ...
     for( int ieta=-85; ieta<=85; ieta++ ){
@@ -394,7 +388,7 @@ class helperFunctions {
              bitVec.push_back(1); bitVec.push_back(ieta); bitVec.push_back(iphi); bitVec.push_back(status);
              EcalAllDeadChannelsValMap.insert( std::make_pair(detid, valVec) );
              EcalAllDeadChannelsBitMap.insert( std::make_pair(detid, bitVec) );
-             if (false)
+             if (makeHist)
                badChannels->Fill (eta, phi);
           }
        } // end loop iphi
@@ -423,14 +417,14 @@ class helperFunctions {
                 bitVec.push_back(2); bitVec.push_back(ix); bitVec.push_back(iy); bitVec.push_back(iz); bitVec.push_back(status);
                 EcalAllDeadChannelsValMap.insert( std::make_pair(detid, valVec) );
                 EcalAllDeadChannelsBitMap.insert( std::make_pair(detid, bitVec) );
-                 if (false)
+                 if (makeHist)
                    badChannels->Fill (eta, phi);
              }
           } // end loop iz
        } // end loop iy
     } // end loop ix
 
-    if (false)
+    if (makeHist)
       {
         TFile *fout = new TFile ("badEcalChannels.root", "recreate");
         fout->cd ();
@@ -666,17 +660,17 @@ class helperFunctions {
   static bool passesVeto (const pat::IsolatedTrack &probe, const std::vector<pat::PackedCandidate> &pfCandidates, const std::vector<pat::Jet> &jets)
   {
     bool passesElec = deltaRToClosestPFLepton<pat::Electron>(probe, pfCandidates) > 0.15
-               && (probe.matchedCaloJetEmEnergy() + probe.matchedCaloJetHadEnergy()) < 10.0//;
+               && (probe.matchedCaloJetEmEnergy() + probe.matchedCaloJetHadEnergy()) < 10.0;
                // && probe.hitAndTOBDrop_bestTrackMissingOuterHits () >= 3.0; // This is not applied for BG MC
-               && probe.lostOuterLayers() >= 3.0; // This is not applied for BG MC
-    bool passesMuon = deltaRToClosestPFLepton<pat::Muon>(probe, pfCandidates) > 0.15
+              //  && probe.lostOuterLayers() >= 3.0; // This is not applied for BG MC
+    bool passesMuon = deltaRToClosestPFLepton<pat::Muon>(probe, pfCandidates) > 0.15;
                // && probe.hitAndTOBDrop_bestTrackMissingOuterHits () >= 3.0; // This is not applied for BG MC
-               && probe.lostOuterLayers() >= 3.0; // This is not applied for BG MC
+              //  && probe.lostOuterLayers() >= 3.0; // This is not applied for BG MC
     bool passesTau = deltaRToClosestPFLepton<pat::Tau>(probe, pfCandidates) > 0.15
                && dRMinJet (probe, jets) > 0.5
-               && (probe.matchedCaloJetEmEnergy() + probe.matchedCaloJetHadEnergy()) < 10.0
+               && (probe.matchedCaloJetEmEnergy() + probe.matchedCaloJetHadEnergy()) < 10.0;
                // && probe.hitAndTOBDrop_bestTrackMissingOuterHits () >= 3.0; // This is not applied for BG MC
-               && probe.lostOuterLayers() >= 3.0; // This is not applied for BG MC
+              //  && probe.lostOuterLayers() >= 3.0; // This is not applied for BG MC
   
     if(std::is_same<T, pat::Electron>::value) return passesElec;
     if(std::is_same<T, pat::Muon>::value) return passesMuon;
@@ -686,17 +680,17 @@ class helperFunctions {
   static bool passesLooseElecVeto (const pat::IsolatedTrack &probe, const std::vector<pat::Electron> &electrons, const reco::Vertex &vertex)
   {
     bool passes = deltaRToClosestVetoElectron(probe,electrons,vertex) > 0.15
-               && (probe.matchedCaloJetEmEnergy() + probe.matchedCaloJetHadEnergy()) < 10.0
+               && (probe.matchedCaloJetEmEnergy() + probe.matchedCaloJetHadEnergy()) < 10.0;
                // && probe.hitAndTOBDrop_bestTrackMissingOuterHits () >= 3.0; // This is not applied for BG MC
-               && probe.lostOuterLayers() >= 3.0; // This is not applied for BG MC
+              //  && probe.lostOuterLayers() >= 3.0; // This is not applied for BG MC
     return passes;
   }
    
   static bool passesLooseMuonVeto (const pat::IsolatedTrack &probe, const std::vector<pat::Muon> &muons)
   {
-    bool passes = deltaRToClosestLooseMuon(probe, muons) > 0.15
+    bool passes = deltaRToClosestLooseMuon(probe, muons) > 0.15;
                // && probe.hitAndTOBDrop_bestTrackMissingOuterHits () >= 3.0; // This is not applied for BG MC
-               && probe.lostOuterLayers() >= 3.0; // This is not applied for BG MC          
+              //  && probe.lostOuterLayers() >= 3.0; // This is not applied for BG MC
     return passes;
   }
   

@@ -79,6 +79,7 @@
 #include "FWCore/PluginManager/interface/ModuleDef.h"
 
 #include "Analysis/Helper/interface/helperFunctions.h"
+#include "Analysis/Helper/interface/plotPrintFunctions.h"
 
 //
 // class declaration
@@ -124,6 +125,7 @@ private:
   edm::ESGetToken<EcalChannelStatus, EcalChannelStatusRcd> ecalStatusToken_;
   edm::EDGetTokenT<bool> ecalBadCalibFilterUpdateToken_;
   std::string HLTName_;
+  bool isCRAB_;
 
   edm::ESHandle<CaloGeometry> caloGeometry;
   edm::ESHandle<EcalChannelStatus> ecalStatus;
@@ -166,9 +168,22 @@ zToLepProbeTrk<T>::zToLepProbeTrk(const edm::ParameterSet& iConfig)
   //now do what ever initialization is needed
 
   HLTName_ = iConfig.getParameter<std::string>("HLTName");
+  isCRAB_ = iConfig.getParameter<bool>("isCRAB");
 
-  helperFunctions::extractFiducialMap<pat::Electron>(vetoListElec);
-  helperFunctions::extractFiducialMap<pat::Muon>(vetoListMu);
+  std::string elecFile = "";
+  std::string muonFile = "";
+
+  if(isCRAB_){
+    elecFile = "electronFiducialMap_2018_data.root";
+    muonFile = "muonFiducialMap_2018_data.root";
+  }
+  else{
+    elecFile = "/home/brenoorzari/CMSSW_13_0_13/src/Analysis/Helper/data/electronFiducialMap_2018_data.root";
+    muonFile = "/home/brenoorzari/CMSSW_13_0_13/src/Analysis/Helper/data/muonFiducialMap_2018_data.root";
+  }
+
+  helperFunctions::extractFiducialMap<pat::Electron>(vetoListElec,elecFile);
+  helperFunctions::extractFiducialMap<pat::Muon>(vetoListMu,muonFile);
 
   commonCuts = {
     "Total",
@@ -280,23 +295,7 @@ zToLepProbeTrk<T>::zToLepProbeTrk(const edm::ParameterSet& iConfig)
 template<char const *T>
 zToLepProbeTrk<T>::~zToLepProbeTrk() {
 
-  int maxSize = 0;
-  for(int i = 1; i <= int(oneDHists_.at("cutflow")->GetNbinsX()); i++){
-    std::string label = oneDHists_.at("cutflow")->GetXaxis()->GetLabels()->At(i-1)->GetName();
-    if(int(label.size()) > maxSize) maxSize = int(label.size());
-  }
-
-  std::string cut = "Cut Name";
-  std::cout << cut << std::string((maxSize - int(cut.size()) + 1),' ') << "\t\tCumul.\t\tIndiv." << std::endl;
-
-  double maxValue = double(oneDHists_.at("selection")->GetBinContent(1));
-  for(int i = 1; i <= int(oneDHists_.at("cutflow")->GetNbinsX()); i++){
-    std::cout << std::setprecision(3) << std::fixed;
-    std::string label = oneDHists_.at("cutflow")->GetXaxis()->GetLabels()->At(i-1)->GetName();
-    int size = int(label.size());
-    int nBlank = maxSize - size + 1;
-    std::cout << oneDHists_.at("cutflow")->GetXaxis()->GetLabels()->At(i-1)->GetName() << std::string(nBlank,' ') << "\t\t" << double(oneDHists_.at("cutflow")->GetBinContent(i)) * 100.0 / maxValue << " % \t" << double(oneDHists_.at("selection")->GetBinContent(i)) * 100.0 / maxValue << " %" << std::endl;
-  }
+  plotPrintFunctions::printCuts(oneDHists_);
 
   std::cout << "# OS T&P pairs before veto: " << nTPOS << std::endl;
   std::cout << "# SS T&P pairs before veto: " << nTPSS << std::endl;
@@ -593,10 +592,6 @@ bool zToLepProbeTrk<T>::filter(edm::Event& iEvent, const edm::EventSetup& iSetup
   
   }
 
-// >= 1 tracks with isFiducialElectronTrack                                                                       1983.0         19.830%        100.000%
-// >= 1 tracks with isFiducialMuonTrack                                                                           1983.0         19.830%        100.000%
-// >= 1 tracks with isFiducialECALTrack                                                                           1863.0         18.630%         98.170%
-
   for(int j = 0; j < int(trackCuts.size()); ++j) {passSel.push_back(false); passCut.push_back(false); auxPassCut.push_back(false);}
 
   int startTrackIdx = 0;
@@ -641,8 +636,6 @@ bool zToLepProbeTrk<T>::filter(edm::Event& iEvent, const edm::EventSetup& iSetup
 
     ++cutIdxInc;
 
-    // Need to include fiducial cuts here!!!
-
     if(helperFunctions::isFiducialTrack(track,vetoListElec,0.05,-1.0))
       {passSel[startTrackIdx+cutIdxInc] = true; if(auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep-1]) auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep] = true;}
 
@@ -657,8 +650,6 @@ bool zToLepProbeTrk<T>::filter(edm::Event& iEvent, const edm::EventSetup& iSetup
       {passSel[startTrackIdx+cutIdxInc] = true; if(auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep-1]) auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep] = true;}
 
     ++cutIdxInc;
-
-    // Need to include fiducial cuts here!!!
 
     if(track.hitPattern().numberOfValidPixelHits() >= 4) 
       {passSel[startTrackIdx+cutIdxInc] = true; if(auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep-1]) auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep] = true;}
@@ -930,6 +921,7 @@ void zToLepProbeTrk<T>::fillDescriptions(edm::ConfigurationDescriptions& descrip
   desc.add<edm::InputTag>("triggersPAT", edm::InputTag("TriggerResults","","PAT"));
   desc.add<edm::InputTag>("triggersHLT", edm::InputTag("TriggerResults","","HLT"));
   desc.add<std::string>("HLTName", std::string("placeholderHLT"));
+  desc.add<bool>("isCRAB", bool(false));
   desc.add<edm::InputTag>("trigobjs", edm::InputTag("slimmedPatTrigger"));
   desc.add<edm::InputTag>("ecalBadCalibReducedMINIAODFilter", edm::InputTag("ecalBadCalibReducedMINIAODFilter"));
 
