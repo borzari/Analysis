@@ -5,7 +5,15 @@ from Analysis.BGEst.leptonTagSkim_cfi import *
 ##### Set up process #####
 ###########################################################
 
-nEvents = 10000
+nEvents = 100000
+
+reportEvery = int(nEvents/10)
+
+isCRAB = True
+
+if isCRAB:
+    nEvents = -1
+    reportEvery = 1
 
 lepton = 'electron'
 # lepton = 'muon'
@@ -14,7 +22,7 @@ lepton = 'electron'
 from Configuration.Eras.Era_Run3_cff import Run3
 process = cms.Process ('LEPTAGSKIM', Run3)
 process.load ('FWCore.MessageService.MessageLogger_cfi')
-process.MessageLogger.cerr.FwkReport.reportEvery = int(nEvents/10)
+process.MessageLogger.cerr.FwkReport.reportEvery = reportEvery
 
 process.maxEvents = cms.untracked.PSet (
     input = cms.untracked.int32 (nEvents)

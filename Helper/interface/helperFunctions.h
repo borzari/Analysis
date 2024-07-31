@@ -204,14 +204,24 @@ class helperFunctions {
   static bool jetPassesTightLepVeto(const pat::Jet &jet)
   {
     // https://twiki.cern.ch/twiki/bin/view/CMS/JetID13p6TeV; using CHS jet as it is the type of slimmedJets
-    return((jet.neutralHadronEnergyFraction()<0.99 && jet.neutralEmEnergyFraction()<0.90 && (jet.chargedMultiplicity() + jet.neutralMultiplicity())>1 && jet.muonEnergyFraction()<0.8 && jet.chargedHadronEnergyFraction()>0.01 && jet.chargedMultiplicity()>0 && jet.chargedEmEnergyFraction()<0.80 && fabs(jet.eta())<=2.6) || (jet.neutralHadronEnergyFraction()<0.90 && jet.neutralEmEnergyFraction()<0.99 && jet.muonEnergyFraction()<0.8 && jet.chargedMultiplicity()>0 && jet.chargedEmEnergyFraction()<0.80 && fabs(jet.eta())>2.6 && fabs(jet.eta())<=2.7) || (jet.neutralHadronEnergyFraction()<0.99 && jet.neutralEmEnergyFraction()<0.99 && jet.neutralMultiplicity()>=1 && fabs(jet.eta())>2.7 && fabs(jet.eta())<=3.0) || (jet.neutralEmEnergyFraction()<0.4 && jet.neutralMultiplicity()>10 && fabs(jet.eta())>3.0 && fabs(jet.eta())<=5.0));
-
+    return((jet.neutralHadronEnergyFraction()<0.99 && jet.neutralEmEnergyFraction()<0.90 && (jet.chargedMultiplicity() + jet.neutralMultiplicity())>1 && jet.muonEnergyFraction()<0.8 && jet.chargedHadronEnergyFraction()>0.01 && jet.chargedMultiplicity()>0 && jet.chargedEmEnergyFraction()<0.80 && fabs(jet.eta())<=2.6) ||
+    (jet.neutralHadronEnergyFraction()<0.90 && jet.neutralEmEnergyFraction()<0.99 && jet.muonEnergyFraction()<0.8 && jet.chargedMultiplicity()>0 && jet.chargedEmEnergyFraction()<0.8 && fabs(jet.eta())>2.6 && fabs(jet.eta())<=2.7) ||
+    (jet.neutralHadronEnergyFraction()<0.99 && jet.neutralEmEnergyFraction()<0.99 && jet.neutralMultiplicity()>1 && fabs(jet.eta())>2.7 && fabs(jet.eta())<=3.0) ||
+    (jet.neutralEmEnergyFraction()<0.4 && jet.neutralMultiplicity()>10 && fabs(jet.eta())>3.0));
   }
 
   static bool IsValidJet(const pat::Jet &jet) {
     if (!(jet.pt() > 30))         return false;
     if (!(fabs(jet.eta()) < 4.5)) return false;
     if (!jetPassesTightLepVeto(jet)) return false;
+    return true;
+  }
+
+  static bool isGoodPV(const reco::Vertex &pv){
+    if (!(pv.isValid() > 0)) return false;
+    if (!(pv.ndof() >= 4)) return false;
+    if (!(fabs(pv.z()) < 24.0)) return false;
+    if (!(sqrt(pv.x() * pv.x() + pv.y() * pv.y()) < 2.0)) return false;
     return true;
   }
 
@@ -661,16 +671,10 @@ class helperFunctions {
   {
     bool passesElec = deltaRToClosestPFLepton<pat::Electron>(probe, pfCandidates) > 0.15
                && (probe.matchedCaloJetEmEnergy() + probe.matchedCaloJetHadEnergy()) < 10.0;
-               // && probe.hitAndTOBDrop_bestTrackMissingOuterHits () >= 3.0; // This is not applied for BG MC
-              //  && probe.lostOuterLayers() >= 3.0; // This is not applied for BG MC
     bool passesMuon = deltaRToClosestPFLepton<pat::Muon>(probe, pfCandidates) > 0.15;
-               // && probe.hitAndTOBDrop_bestTrackMissingOuterHits () >= 3.0; // This is not applied for BG MC
-              //  && probe.lostOuterLayers() >= 3.0; // This is not applied for BG MC
     bool passesTau = deltaRToClosestPFLepton<pat::Tau>(probe, pfCandidates) > 0.15
                && dRMinJet (probe, jets) > 0.5
                && (probe.matchedCaloJetEmEnergy() + probe.matchedCaloJetHadEnergy()) < 10.0;
-               // && probe.hitAndTOBDrop_bestTrackMissingOuterHits () >= 3.0; // This is not applied for BG MC
-              //  && probe.lostOuterLayers() >= 3.0; // This is not applied for BG MC
   
     if(std::is_same<T, pat::Electron>::value) return passesElec;
     if(std::is_same<T, pat::Muon>::value) return passesMuon;
@@ -681,16 +685,12 @@ class helperFunctions {
   {
     bool passes = deltaRToClosestVetoElectron(probe,electrons,vertex) > 0.15
                && (probe.matchedCaloJetEmEnergy() + probe.matchedCaloJetHadEnergy()) < 10.0;
-               // && probe.hitAndTOBDrop_bestTrackMissingOuterHits () >= 3.0; // This is not applied for BG MC
-              //  && probe.lostOuterLayers() >= 3.0; // This is not applied for BG MC
     return passes;
   }
    
   static bool passesLooseMuonVeto (const pat::IsolatedTrack &probe, const std::vector<pat::Muon> &muons)
   {
     bool passes = deltaRToClosestLooseMuon(probe, muons) > 0.15;
-               // && probe.hitAndTOBDrop_bestTrackMissingOuterHits () >= 3.0; // This is not applied for BG MC
-              //  && probe.lostOuterLayers() >= 3.0; // This is not applied for BG MC
     return passes;
   }
   

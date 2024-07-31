@@ -5,23 +5,27 @@ from Analysis.BGEst.singLepCRNoJetSelSkim_cfi import *
 ##### Set up process #####
 ###########################################################
 
-# nEvents = 10000
-nEvents = -1
+nEvents = 100000
+
+reportEvery = int(nEvents/10)
+
+isCRAB = False
+useMETTriggers = False
+
+if isCRAB:
+    nEvents = -1
+    reportEvery = 1
 
 lepton = 'electron'
 # lepton = 'muon'
 # lepton = 'tau'
-
-isCRAB = False
-useMETTriggers = True
 
 if useMETTriggers: lepton = "METTriggers_" + lepton
 
 from Configuration.Eras.Era_Run3_cff import Run3
 process = cms.Process ('SINGLEPCRNOJETSELSKIM', Run3)
 process.load ('FWCore.MessageService.MessageLogger_cfi')
-# process.MessageLogger.cerr.FwkReport.reportEvery = int(nEvents/10)
-process.MessageLogger.cerr.FwkReport.reportEvery = 1
+process.MessageLogger.cerr.FwkReport.reportEvery = reportEvery
 
 process.maxEvents = cms.untracked.PSet (
     input = cms.untracked.int32 (nEvents)

@@ -56,14 +56,19 @@ This has the BackgroundEstimation, StandardAnalysis and TriggerAnalysis selectio
 
 ## Done for StandardAnalysis
 
-## TODO for StandardAnalysis
-
-- Implement all selections
+- Implemented all selections
    - Basic
    - IsolatedTrack
    - CandidateTrack
    - DisappearingTrack
-- Use signal samples to test and compare selections
+
+## Ongoing for StandardAnalysis
+
+- Need to use signal to test and compare selections
+   - Used DY so far, and, for 100k events, everything is consistent
+
+## TODO for StandardAnalysis
+
 - Implement lifetime reweighting method
 - Implement scale factor corrections
    - Data vs MC ISR
@@ -72,7 +77,6 @@ This has the BackgroundEstimation, StandardAnalysis and TriggerAnalysis selectio
    - Missing hits
    - MG5
 - Implement method to estimate signal significance
-
 
 ## Done for TriggerAnalysis
 
@@ -88,3 +92,4 @@ This has the BackgroundEstimation, StandardAnalysis and TriggerAnalysis selectio
 
 - Implement method to extract trigger efficiency scale factors
 - Estimate efficiency over all signal samples and select the best for AN
+   - This might not be needed, and all data from 2022 and 2023 should be used
