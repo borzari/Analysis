@@ -65,6 +65,20 @@
 #include "FWCore/ParameterSet/interface/ParameterSetDescription.h"
 #include "FWCore/PluginManager/interface/ModuleDef.h"
 
+struct VariablesToPlot {
+
+  std::vector<pat::Electron> electrons;
+  std::vector<pat::Muon> muons;
+  std::vector<pat::Tau> taus;
+  std::vector<pat::IsolatedTrack> tracks;
+  std::vector<pat::Jet> jets;
+  pat::MET met;
+  double DeltaPhiJetMET;
+  TVector2 metNoMu;
+  TVector2 metNoMuNoLep;
+
+};
+
 class plotPrintFunctions {
 
   public:
@@ -115,6 +129,67 @@ class plotPrintFunctions {
       numSelection.erase(numSelection.size() - 4, 3);
       std::cout << label << std::string(nBlankLabel,' ') << numEvents << std::string(nBlankEvents,' ') << numCutflow << std::string(nBlankCutflow,' ') << numSelection << std::endl;
     }
+
+  }
+
+  template<class T>
+  static void createObjHists(edm::Service<TFileService> &fs, std::map<std::string, TH1D *> &oneDHists, std::string const &objName){
+
+    std::string pt = objName + "_pt";
+    std::string eta = objName + "_eta";
+    std::string phi = objName + "_phi";
+    std::string charge = objName + "_charge";
+
+    oneDHists[objName + "_pt"] = fs->make<TH1D>(pt.c_str(), "", 200, 0.0, 1000.0);
+    oneDHists[objName + "_eta"] = fs->make<TH1D>(eta.c_str(), "", 64, 0.0, 3.2);
+    oneDHists[objName + "_phi"] = fs->make<TH1D>(phi.c_str(), "", 64, 0.0, 3.2);
+    oneDHists[objName + "_charge"] = fs->make<TH1D>(charge.c_str(), "", 3, -1.5, 1.5);
+  
+  }
+
+  static void createCommonHists(edm::Service<TFileService> &fs, std::map<std::string, TH1D *> &oneDHists, std::map<std::string, TH2D *> &twoDHists){
+
+    oneDHists["met_pt"] = fs->make<TH1D>("met_pt", "", 200, 0.0, 1000.0);
+    oneDHists["met_phi"] = fs->make<TH1D>("met_phi", "", 64, 0.0, 3.2);
+    oneDHists["metNoMu_pt"] = fs->make<TH1D>("metNoMu_pt", "", 200, 0.0, 1000.0);
+    oneDHists["metNoMu_phi"] = fs->make<TH1D>("metNoMu_phi", "", 64, 0.0, 3.2);
+    oneDHists["metNoMuNoLep_pt"] = fs->make<TH1D>("metNoMuNoLep_pt", "", 200, 0.0, 1000.0);
+    oneDHists["metNoMuNoLep_phi"] = fs->make<TH1D>("metNoMuNoLep_phi", "", 64, 0.0, 3.2);
+
+    twoDHists["metNoMuvsDeltaPhiJetMetNoMu"] = fs->make<TH2D>("metNoMuvsDeltaPhiJetMetNoMu", "", 200, 0.0, 1000.0, 64, 0.0, 3.2);
+  
+  }
+
+  template<class T>
+  static void plotObjs(std::map<std::string, TH1D *> &oneDHists, std::vector<T> const &objs, std::string objName){
+
+    for (const auto& obj : objs) {
+      
+      oneDHists.at(objName + "_pt")->Fill(obj.pt());
+      oneDHists.at(objName + "_eta")->Fill(obj.eta());
+      oneDHists.at(objName + "_phi")->Fill(obj.phi());
+      oneDHists.at(objName + "_charge")->Fill(obj.charge());
+  
+    }
+
+  }
+
+  static void plotVariables(std::map<std::string, TH1D *> oneDHists, std::map<std::string, TH2D *> twoDHists, VariablesToPlot const &objs){
+
+    if(objs.electrons.size() > 0) plotObjs<pat::Electron>(oneDHists,objs.electrons,"electron");
+    if(objs.muons.size() > 0) plotObjs<pat::Muon>(oneDHists,objs.muons,"muon");
+    if(objs.taus.size() > 0) plotObjs<pat::Tau>(oneDHists,objs.taus,"tau");
+    if(objs.tracks.size() > 0) plotObjs<pat::IsolatedTrack>(oneDHists,objs.tracks,"track");
+    if(objs.jets.size() > 0) plotObjs<pat::Jet>(oneDHists,objs.jets,"jet");
+
+    oneDHists.at("met_pt")->Fill(objs.met.pt());
+    oneDHists.at("met_phi")->Fill(objs.met.phi());
+    oneDHists.at("metNoMu_pt")->Fill(objs.metNoMu.Mod());
+    oneDHists.at("metNoMu_phi")->Fill(objs.metNoMu.Phi());
+    oneDHists.at("metNoMuNoLep_pt")->Fill(objs.metNoMuNoLep.Mod());
+    oneDHists.at("metNoMuNoLep_phi")->Fill(objs.metNoMuNoLep.Phi());
+
+    twoDHists.at("metNoMuvsDeltaPhiJetMetNoMu")->Fill(objs.metNoMuNoLep.Mod(),objs.DeltaPhiJetMET);
 
   }
 

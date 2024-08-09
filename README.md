@@ -9,6 +9,8 @@ This has the BackgroundEstimation, StandardAnalysis and TriggerAnalysis selectio
    - It helps on the overall organization of the code
    - It helps when needing to apply changes to the selection
       - Might find a better way to make explicit changes to the methods if needed
+- Implemented a `plotPrintFunctions` class to use for printing cumulative and individual efficiencies and to use to plot histograms when needed
+- Implemented a `selectingFunctions` to clean up the selection plugins
 
 ## Done for BackgroundEstimation
 
