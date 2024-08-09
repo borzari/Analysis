@@ -241,17 +241,11 @@ bool basicSel::filter(edm::Event& iEvent, const edm::EventSetup& iSetup) {
   iEvent.getByToken(metsToken_, mets);
   const pat::MET &met = mets->at(0);
 
-  TVector2 metNoMu (met.px(), met.py());
-
   edm::Handle<std::vector<pat::PackedCandidate>> pfCandidates;
   iEvent.getByToken(pfCandToken_, pfCandidates);
 
-  for (const auto &pfCandidate : *pfCandidates) {
-    if (abs (pfCandidate.pdgId ()) != 13) continue;
-    TVector2 muon (pfCandidate.px(), pfCandidate.py());
-    metNoMu += muon;
-  }
-
+  TVector2 metNoMu = helperFunctions::calcMetNoMu(met, pfCandidates);
+  
   edm::Handle<bool> passecalBadCalibFilterUpdate;
   iEvent.getByToken(ecalBadCalibFilterUpdateToken_, passecalBadCalibFilterUpdate);
 
