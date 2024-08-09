@@ -5,19 +5,19 @@ from Analysis.BGEst.leptonTagSkim_cfi import *
 ##### Set up process #####
 ###########################################################
 
-nEvents = 100000
+nEvents = 10000
 
 reportEvery = int(nEvents/10)
 
-isCRAB = True
+isCRAB = False
 
 if isCRAB:
     nEvents = -1
     reportEvery = 1
 
-lepton = 'electron'
+# lepton = 'electron'
 # lepton = 'muon'
-# lepton = 'tau'
+lepton = 'tau'
 
 from Configuration.Eras.Era_Run3_cff import Run3
 process = cms.Process ('LEPTAGSKIM', Run3)

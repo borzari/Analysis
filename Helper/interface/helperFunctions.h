@@ -238,11 +238,11 @@ class helperFunctions {
   }
 
   static bool passesDecayModeReconstruction (const pat::Tau &tau){
-    return (tau.tauID("decayModeFindingNewDMs"));
+    return (tau.tauID("decayModeFindingNewDMs") && tau.tauID("byTightCombinedIsolationDeltaBetaCorr3Hits"));
   }
 
   static bool passesLightFlavorRejection (const pat::Tau &tau){
-    return (tau.tauID("byVVVLooseDeepTau2017v2p1VSe") || tau.tauID("byVVVLooseDeepTau2018v2p5VSe")) && (tau.tauID("byVLooseDeepTau2017v2p1VSmu") || tau.tauID("byVLooseDeepTau2018v2p5VSmu"));
+    return (tau.tauID("byVVVLooseDeepTau2018v2p5VSe")) && (tau.tauID("byVLooseDeepTau2018v2p5VSmu"));
   }
 
   template<typename T>
@@ -641,7 +641,7 @@ class helperFunctions {
         passesVeto_dz = (ele_dz < 0.20);
       }
   
-      if(electron.electronID("cutBasedElectronID-RunIIIWinter22-V1-tight") &&
+      if(electron.electronID("cutBasedElectronID-RunIIIWinter22-V1-veto") &&
          passesVeto_dxy &&
          passesVeto_dz &&
          (dR < deltaRToClosestVetoElectron || deltaRToClosestVetoElectron < 0.0)) {
@@ -667,24 +667,27 @@ class helperFunctions {
   }
   
   template<typename T>
-  static bool passesVeto (const pat::IsolatedTrack &probe, const std::vector<pat::PackedCandidate> &pfCandidates, const std::vector<pat::Jet> &jets)
+  static bool passesVeto (const pat::IsolatedTrack &probe, const std::vector<pat::PackedCandidate> &pfCandidates, const std::vector<pat::Jet> &jets, const double caloNewNoPUDRp5CentralCalo)
   {
     bool passesElec = deltaRToClosestPFLepton<pat::Electron>(probe, pfCandidates) > 0.15
-               && (probe.matchedCaloJetEmEnergy() + probe.matchedCaloJetHadEnergy()) < 10.0;
+              //  && (probe.matchedCaloJetEmEnergy() + probe.matchedCaloJetHadEnergy()) < 10.0;
+               && caloNewNoPUDRp5CentralCalo < 10.0;
     bool passesMuon = deltaRToClosestPFLepton<pat::Muon>(probe, pfCandidates) > 0.15;
     bool passesTau = deltaRToClosestPFLepton<pat::Tau>(probe, pfCandidates) > 0.15
                && dRMinJet (probe, jets) > 0.5
-               && (probe.matchedCaloJetEmEnergy() + probe.matchedCaloJetHadEnergy()) < 10.0;
+              //  && (probe.matchedCaloJetEmEnergy() + probe.matchedCaloJetHadEnergy()) < 10.0;
+               && caloNewNoPUDRp5CentralCalo < 10.0;
   
     if(std::is_same<T, pat::Electron>::value) return passesElec;
     if(std::is_same<T, pat::Muon>::value) return passesMuon;
     if(std::is_same<T, pat::Tau>::value) return passesTau;
   }
 
-  static bool passesLooseElecVeto (const pat::IsolatedTrack &probe, const std::vector<pat::Electron> &electrons, const reco::Vertex &vertex)
+  static bool passesLooseElecVeto (const pat::IsolatedTrack &probe, const std::vector<pat::Electron> &electrons, const reco::Vertex &vertex, const double caloNewNoPUDRp5CentralCalo)
   {
     bool passes = deltaRToClosestVetoElectron(probe,electrons,vertex) > 0.15
-               && (probe.matchedCaloJetEmEnergy() + probe.matchedCaloJetHadEnergy()) < 10.0;
+              //  && (probe.matchedCaloJetEmEnergy() + probe.matchedCaloJetHadEnergy()) < 10.0;
+                && caloNewNoPUDRp5CentralCalo < 10.0;
     return passes;
   }
    
@@ -1036,6 +1039,20 @@ class helperFunctions {
     passesVec.push_back(passesUp);
 
     return passesVec;
+
+  }
+
+  static TVector2 calcMetNoMu(const pat::MET &met, edm::Handle<std::vector<pat::PackedCandidate>> &pfCandidates){
+
+    TVector2 metNoMu (met.px(), met.py());
+
+    for (const auto &pfCandidate : *pfCandidates) {
+      if (abs (pfCandidate.pdgId ()) != 13) continue;
+      TVector2 muon (pfCandidate.px(), pfCandidate.py());
+      metNoMu += muon;
+    }
+
+    return metNoMu;
 
   }
 

@@ -10,7 +10,10 @@ nEvents = 100000
 reportEvery = int(nEvents/10)
 
 isCRAB = False
-useMETTriggers = False
+# isCRAB = True
+
+# useMETTriggers = False
+useMETTriggers = True
 
 if isCRAB:
     nEvents = -1
@@ -32,7 +35,7 @@ process.maxEvents = cms.untracked.PSet (
 )
 
 process.source = cms.Source ("PoolSource",
-    fileNames = cms.untracked.vstring ("file:/home/brenoorzari/CMSSW_13_0_13/src/Analysis/BGEst/data/selected.root"),
+    fileNames = cms.untracked.vstring ("file:/home/brenoorzari/selected.root"),
 )
 
 process.TFileService = cms.Service ('TFileService',

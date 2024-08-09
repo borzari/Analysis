@@ -80,6 +80,7 @@
 
 #include "Analysis/Helper/interface/helperFunctions.h"
 #include "Analysis/Helper/interface/plotPrintFunctions.h"
+#include "Analysis/Helper/interface/selectingFunctions.h"
 
 //
 // class declaration
@@ -229,11 +230,9 @@ zToLepProbeTrk<T>::zToLepProbeTrk(const edm::ParameterSet& iConfig)
     "track fabs ( eta ) < 0.15 || fabs ( eta ) > 0.35",
     "track fabs ( eta ) < 1.55 || fabs ( eta ) > 1.85",
     "track !inTOBCrack",
-    //
     "isFiducialElectronTrack",
     "isFiducialMuonTrack",
     "isFiducialECALTrack",
-    //
     "track hitPattern_.numberOfValidPixelHits >= 4",
     "track hitPattern_.numberOfValidHits >= 4",
     "track missingInnerHits == 0",
@@ -404,37 +403,7 @@ bool zToLepProbeTrk<T>::filter(edm::Event& iEvent, const edm::EventSetup& iSetup
     
     for (const auto& electron : *electrons) {
       
-      int cutIdxInc = 0;
-
-      if(electron.pt() > 32.)
-        {passSel[startElecIdx+cutIdxInc] = true; if(passCut[startElecIdx-1]) auxPassCut[cutIdxInc] = true;}
-
-      ++cutIdxInc;
-
-      if(helperFunctions::isMatchedToTriggerObject<pat::Electron> (iEvent, *triggerBitsHLT, electron, *triggerObjs, "hltEgammaCandidates::HLT", "hltEle32WPTightGsfTrackIsoFilter"))
-        {passSel[startElecIdx+cutIdxInc] = true; if(auxPassCut[cutIdxInc-1]) auxPassCut[cutIdxInc] = true;}
-
-      ++cutIdxInc;
-
-      if(abs(electron.eta()) < 2.1)
-        {passSel[startElecIdx+cutIdxInc] = true; if(auxPassCut[cutIdxInc-1]) auxPassCut[cutIdxInc] = true;}
-
-      ++cutIdxInc;
-
-      if(electron.electronID("cutBasedElectronID-RunIIIWinter22-V1-tight"))
-        {passSel[startElecIdx+cutIdxInc] = true; if(auxPassCut[cutIdxInc-1]) auxPassCut[cutIdxInc] = true;}
-
-      ++cutIdxInc;
-
-      if(helperFunctions::elecD0(electron, pv))
-        {passSel[startElecIdx+cutIdxInc] = true; if(auxPassCut[cutIdxInc-1]) auxPassCut[cutIdxInc] = true;}
-
-      ++cutIdxInc;
-
-      if(helperFunctions::elecDZ(electron, pv))
-        {passSel[startElecIdx+cutIdxInc] = true; if(auxPassCut[cutIdxInc-1]) auxPassCut[cutIdxInc] = true;}
-
-      if(auxPassCut[cutIdxInc]) electronTags.push_back(electron);
+      selectingFunctions::zToLepElecSel(passSel,passCut,auxPassCut,electron,startElecIdx,pv,electronTags,iEvent,triggerBitsHLT,triggerObjs);
       
       for(int j = 0; j < int(auxPassCut.size()); ++j){
         if(auxPassCut[j]) passCut[j+int(commonCuts.size())-1] = true;
@@ -453,32 +422,7 @@ bool zToLepProbeTrk<T>::filter(edm::Event& iEvent, const edm::EventSetup& iSetup
 
     for (const auto& muon : *muons) {
 
-      int cutIdxInc = 0;
-      
-      if(muon.pt() > 26.)
-        {passSel[startMuonIdx+cutIdxInc] = true; if(passCut[startMuonIdx-1]) auxPassCut[cutIdxInc] = true;}
-
-      ++cutIdxInc;
-
-      if(helperFunctions::isMatchedToTriggerObject<pat::Muon> (iEvent, *triggerBitsHLT, muon, *triggerObjs, "hltIterL3MuonCandidates::HLT", "hltL3crIsoL1sSingleMu22L1f0L2f10QL3f24QL3trkIsoFiltered"))
-        {passSel[startMuonIdx+cutIdxInc] = true; if(auxPassCut[cutIdxInc-1]) auxPassCut[cutIdxInc] = true;}
-
-      ++cutIdxInc;
-
-      if(abs(muon.eta()) < 2.1)
-        {passSel[startMuonIdx+cutIdxInc] = true; if(auxPassCut[cutIdxInc-1]) auxPassCut[cutIdxInc] = true;}
-
-      ++cutIdxInc;
-
-      if(muon.isTightMuon(pv))
-        {passSel[startMuonIdx+cutIdxInc] = true; if(auxPassCut[cutIdxInc-1]) auxPassCut[cutIdxInc] = true;}
-
-      ++cutIdxInc;
-
-      if(helperFunctions::muonIso(muon) < 0.15)
-        {passSel[startMuonIdx+cutIdxInc] = true; if(auxPassCut[cutIdxInc-1]) auxPassCut[cutIdxInc] = true;}
-
-      if(auxPassCut[cutIdxInc]) muonTags.push_back(muon);
+      selectingFunctions::zToLepMuonSel(passSel,passCut,auxPassCut,muon,startMuonIdx,pv,muonTags,iEvent,triggerBitsHLT,triggerObjs);
 
       for(int j = 0; j < int(auxPassCut.size()); ++j){
         if(auxPassCut[j]) passCut[j+int(commonCuts.size())-1] = true;
@@ -497,42 +441,7 @@ bool zToLepProbeTrk<T>::filter(edm::Event& iEvent, const edm::EventSetup& iSetup
     
     for (const auto& electron : *electrons) {
       
-      int cutIdxInc = 0;
-
-      if(electron.pt() > 32.)
-        {passSel[startTauIdx+cutIdxInc] = true; if(passCut[startTauIdx-1]) auxPassCut[cutIdxInc] = true;}
-
-      ++cutIdxInc;
-
-      if(helperFunctions::isMatchedToTriggerObject<pat::Electron> (iEvent, *triggerBitsHLT, electron, *triggerObjs, "hltEgammaCandidates::HLT", "hltEle32WPTightGsfTrackIsoFilter"))
-        {passSel[startTauIdx+cutIdxInc] = true; if(auxPassCut[cutIdxInc-1]) auxPassCut[cutIdxInc] = true;}
-
-      ++cutIdxInc;
-
-      if(abs(electron.eta()) < 2.1)
-        {passSel[startTauIdx+cutIdxInc] = true; if(auxPassCut[cutIdxInc-1]) auxPassCut[cutIdxInc] = true;}
-
-      ++cutIdxInc;
-
-      if(electron.electronID("cutBasedElectronID-RunIIIWinter22-V1-tight"))
-        {passSel[startTauIdx+cutIdxInc] = true; if(auxPassCut[cutIdxInc-1]) auxPassCut[cutIdxInc] = true;}
-
-      ++cutIdxInc;
-
-      if(helperFunctions::elecD0(electron, pv))
-        {passSel[startTauIdx+cutIdxInc] = true; if(auxPassCut[cutIdxInc-1]) auxPassCut[cutIdxInc] = true;}
-
-      ++cutIdxInc;
-
-      if(helperFunctions::elecDZ(electron, pv))
-        {passSel[startTauIdx+cutIdxInc] = true; if(auxPassCut[cutIdxInc-1]) auxPassCut[cutIdxInc] = true;}
-
-      ++cutIdxInc;
-
-      if(helperFunctions::transvMassLepton<pat::Electron>(electron,met) < 40.0)
-        {passSel[startTauIdx+cutIdxInc] = true; if(auxPassCut[cutIdxInc-1]) auxPassCut[cutIdxInc] = true;}
-
-      if(auxPassCut[cutIdxInc]) taueTags.push_back(electron);
+      selectingFunctions::zToLepTauEleSel(passSel,passCut,auxPassCut,electron,startTauIdx,pv,taueTags,iEvent,triggerBitsHLT,triggerObjs,met);
       
       for(int j = 0; j < int(auxPassCut.size()); ++j){
         if(auxPassCut[j]) passCut[j+int(commonCuts.size())-1] = true;
@@ -551,37 +460,7 @@ bool zToLepProbeTrk<T>::filter(edm::Event& iEvent, const edm::EventSetup& iSetup
     
     for (const auto& muon : *muons) {
 
-      int cutIdxInc = 0;
-      
-      if(muon.pt() > 26.)
-        {passSel[startTauIdx+cutIdxInc] = true; if(passCut[startTauIdx-1]) auxPassCut[cutIdxInc] = true;}
-
-      ++cutIdxInc;
-
-      if(helperFunctions::isMatchedToTriggerObject<pat::Muon> (iEvent, *triggerBitsHLT, muon, *triggerObjs, "hltIterL3MuonCandidates::HLT", "hltL3crIsoL1sSingleMu22L1f0L2f10QL3f24QL3trkIsoFiltered"))
-        {passSel[startTauIdx+cutIdxInc] = true; if(auxPassCut[cutIdxInc-1]) auxPassCut[cutIdxInc] = true;}
-
-      ++cutIdxInc;
-
-      if(abs(muon.eta()) < 2.1)
-        {passSel[startTauIdx+cutIdxInc] = true; if(auxPassCut[cutIdxInc-1]) auxPassCut[cutIdxInc] = true;}
-
-      ++cutIdxInc;
-
-      if(muon.isTightMuon(pv))
-        {passSel[startTauIdx+cutIdxInc] = true; if(auxPassCut[cutIdxInc-1]) auxPassCut[cutIdxInc] = true;}
-
-      ++cutIdxInc;
-
-      if(helperFunctions::muonIso(muon) < 0.15)
-        {passSel[startTauIdx+cutIdxInc] = true; if(auxPassCut[cutIdxInc-1]) auxPassCut[cutIdxInc] = true;}
-
-      ++cutIdxInc;
-
-      if(helperFunctions::transvMassLepton<pat::Muon>(muon,met) < 40.0)
-        {passSel[startTauIdx+cutIdxInc] = true; if(auxPassCut[cutIdxInc-1]) auxPassCut[cutIdxInc] = true;}
-
-      if(auxPassCut[cutIdxInc]) taumTags.push_back(muon);
+      selectingFunctions::zToLepTauMuSel(passSel,passCut,auxPassCut,muon,startTauIdx,pv,taumTags,iEvent,triggerBitsHLT,triggerObjs,met);
 
       for(int j = 0; j < int(auxPassCut.size()); ++j){
         if(auxPassCut[j]) passCut[j+int(commonCuts.size())-1] = true;
@@ -604,129 +483,12 @@ bool zToLepProbeTrk<T>::filter(edm::Event& iEvent, const edm::EventSetup& iSetup
 
   for (const auto& track : *tracks) {
 
-    int cutIdxInc = 0;
-      
-    if(track.pt() > 30.) 
-      {passSel[startTrackIdx+cutIdxInc] = true; if(passCut[startTrackIdx+cutIdxInc-1]) auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep] = true;}
+    if(strcmp(T, "electron") == 0) selectingFunctions::zToLepTrackSel<pat::Electron>(passSel, passCut, auxPassCut, track, startTrackIdx, getStTrkIdxLep, trackProbes, vetoListElec, vetoListMu, EcalAllDeadChannelsValMap, EcalAllDeadChannelsBitMap, jets, electrons, muons, taus, EBRecHits, EERecHits, HBHERecHits, rhoCentralCalo, caloGeometry);
 
-    ++cutIdxInc;
+    if(strcmp(T, "muon") == 0) selectingFunctions::zToLepTrackSel<pat::Muon>(passSel, passCut, auxPassCut, track, startTrackIdx, getStTrkIdxLep, trackProbes, vetoListElec, vetoListMu, EcalAllDeadChannelsValMap, EcalAllDeadChannelsBitMap, jets, electrons, muons, taus, EBRecHits, EERecHits, HBHERecHits, rhoCentralCalo, caloGeometry);
 
-    if(fabs(track.eta()) < 2.1) 
-      {passSel[startTrackIdx+cutIdxInc] = true; if(auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep-1]) auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep] = true;}
+    if(strcmp(T, "tauele") == 0 || strcmp(T, "taumu") == 0) selectingFunctions::zToLepTrackSel<pat::Tau>(passSel, passCut, auxPassCut, track, startTrackIdx, getStTrkIdxLep, trackProbes, vetoListElec, vetoListMu, EcalAllDeadChannelsValMap, EcalAllDeadChannelsBitMap, jets, electrons, muons, taus, EBRecHits, EERecHits, HBHERecHits, rhoCentralCalo, caloGeometry);
 
-    ++cutIdxInc;
-
-    if((fabs(track.eta()) < 1.42) || (fabs(track.eta()) > 1.65)) 
-      {passSel[startTrackIdx+cutIdxInc] = true; if(auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep-1]) auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep] = true;}
-
-    ++cutIdxInc;
-
-    if((fabs(track.eta()) < 0.15) || (fabs(track.eta()) > 0.35)) 
-      {passSel[startTrackIdx+cutIdxInc] = true; if(auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep-1]) auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep] = true;}
-
-    ++cutIdxInc;
-
-    if((fabs(track.eta()) < 1.55) || (fabs(track.eta()) > 1.85)) 
-      {passSel[startTrackIdx+cutIdxInc] = true; if(auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep-1]) auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep] = true;}
-
-    ++cutIdxInc;
-
-    if(!helperFunctions::inTOBCrack(track)) 
-      {passSel[startTrackIdx+cutIdxInc] = true; if(auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep-1]) auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep] = true;}
-
-    ++cutIdxInc;
-
-    if(helperFunctions::isFiducialTrack(track,vetoListElec,0.05,-1.0))
-      {passSel[startTrackIdx+cutIdxInc] = true; if(auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep-1]) auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep] = true;}
-
-    ++cutIdxInc;
-
-    if(helperFunctions::isFiducialTrack(track,vetoListMu,0.05,-1.0))
-      {passSel[startTrackIdx+cutIdxInc] = true; if(auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep-1]) auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep] = true;}
-
-    ++cutIdxInc;
-
-    if(!helperFunctions::isCloseToBadEcalChannel(track,0.05,EcalAllDeadChannelsValMap,EcalAllDeadChannelsBitMap))
-      {passSel[startTrackIdx+cutIdxInc] = true; if(auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep-1]) auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep] = true;}
-
-    ++cutIdxInc;
-
-    if(track.hitPattern().numberOfValidPixelHits() >= 4) 
-      {passSel[startTrackIdx+cutIdxInc] = true; if(auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep-1]) auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep] = true;}
-
-    ++cutIdxInc;
-
-    if(track.hitPattern().numberOfValidHits() >= 4) 
-      {passSel[startTrackIdx+cutIdxInc] = true; if(auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep-1]) auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep] = true;}
-
-    ++cutIdxInc;
-
-    if(track.lostInnerLayers() == 0) 
-      {passSel[startTrackIdx+cutIdxInc] = true; if(auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep-1]) auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep] = true;}
-
-    ++cutIdxInc;
-
-    if(helperFunctions::hitDrop_missingMiddleHits(track) == 0) 
-      {passSel[startTrackIdx+cutIdxInc] = true; if(auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep-1]) auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep] = true;}
-
-    ++cutIdxInc;
-
-    if(((track.pfIsolationDR03().chargedHadronIso() + track.pfIsolationDR03().puChargedHadronIso()) / track.pt()) < 0.05) 
-      {passSel[startTrackIdx+cutIdxInc] = true; if(auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep-1]) auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep] = true;}
-
-    ++cutIdxInc;
-
-    if(fabs(track.dxy()) < 0.02) 
-      {passSel[startTrackIdx+cutIdxInc] = true; if(auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep-1]) auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep] = true;}
-
-    ++cutIdxInc;
-
-    if(fabs(track.dz()) < 0.5) 
-      {passSel[startTrackIdx+cutIdxInc] = true; if(auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep-1]) auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep] = true;}
-
-    if(strcmp(T, "electron") == 0 || strcmp(T, "muon") == 0)
-      {
-        ++cutIdxInc;
-
-        if(helperFunctions::dRMinJet(track, *jets) > 0.5)
-          {passSel[startTrackIdx+cutIdxInc] = true; if(auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep-1]) auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep] = true;}
-      }
-
-    if(strcmp(T, "electron") == 0 || strcmp(T, "tauele") == 0 || strcmp(T, "taumu") == 0)
-      {
-        ++cutIdxInc;
-
-        if(helperFunctions::deltaRToClosestLepton<pat::Muon>(track, *muons) > 0.15)
-          {passSel[startTrackIdx+cutIdxInc] = true; if(auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep-1]) auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep] = true;}
-      }
-
-    if(strcmp(T, "muon") == 0 || strcmp(T, "tauele") == 0 || strcmp(T, "taumu") == 0)
-      {
-        ++cutIdxInc;
-
-        if(helperFunctions::deltaRToClosestLepton<pat::Electron>(track, *electrons) > 0.15)
-          {passSel[startTrackIdx+cutIdxInc] = true; if(auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep-1]) auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep] = true;}
-      }
-
-    if(strcmp(T, "electron") == 0 || strcmp(T, "muon") == 0) 
-      {
-        ++cutIdxInc;
-
-        if(helperFunctions::deltaRToClosestTauHad(track, *taus) > 0.15)
-          {passSel[startTrackIdx+cutIdxInc] = true; if(auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep-1]) auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep] = true;}
-
-      } // The individual efficiency of this is different than the original analysis, because it uses distinct selections that follow the Run 3 recommendations from the Tau POG https://twiki.cern.ch/twiki/bin/view/CMS/TauIDRecommendationForRun3#Kinematic_tau_selection
-    
-    if(strcmp(T, "muon") == 0){
-
-      ++cutIdxInc;
-
-      if(helperFunctions::caloNewNoPUDRp5CentralCalo(track, *EBRecHits, *EERecHits, *HBHERecHits, *rhoCentralCalo, caloGeometry) < 10.0) 
-        {passSel[startTrackIdx+cutIdxInc] = true; if(auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep-1]) auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep] = true;}
-
-    }
-
-    if(auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep]) trackProbes.push_back(track);
 
     if(strcmp(T, "electron") == 0){
       for(int j = int(electronCuts.size()); j < int(auxPassCut.size()); ++j){
@@ -764,11 +526,12 @@ bool zToLepProbeTrk<T>::filter(edm::Event& iEvent, const edm::EventSetup& iSetup
         if(helperFunctions::goodInvMassLepton<pat::Electron>(tag, probe, false) && (tag.charge()*probe.charge()) < 0.0){
           ++nTPOS;
           ++hist_nTPOS;
-          if(helperFunctions::passesVeto<pat::Electron>(probe, *pfCandidates, *jets)){
+          double caloNewNoPUDRp5CentralCalo = helperFunctions::caloNewNoPUDRp5CentralCalo(probe, *EBRecHits, *EERecHits, *HBHERecHits, *rhoCentralCalo, caloGeometry);
+          if(helperFunctions::passesVeto<pat::Electron>(probe, *pfCandidates, *jets, caloNewNoPUDRp5CentralCalo)){
             ++nTPOS_veto;
             ++hist_nTPOS_veto;
           }
-          if(helperFunctions::passesLooseElecVeto(probe, *electrons, pv)){
+          if(helperFunctions::passesLooseElecVeto(probe, *electrons, pv, caloNewNoPUDRp5CentralCalo)){
             ++nTPOSLoose_veto;
             ++hist_nTPOSLoose_veto;
           }
@@ -776,11 +539,12 @@ bool zToLepProbeTrk<T>::filter(edm::Event& iEvent, const edm::EventSetup& iSetup
         if(helperFunctions::goodInvMassLepton<pat::Electron>(tag, probe, false) && (tag.charge()*probe.charge()) > 0.0){
           ++nTPSS;
           ++hist_nTPSS;
-          if(helperFunctions::passesVeto<pat::Electron>(probe, *pfCandidates, *jets)){
+          double caloNewNoPUDRp5CentralCalo = helperFunctions::caloNewNoPUDRp5CentralCalo(probe, *EBRecHits, *EERecHits, *HBHERecHits, *rhoCentralCalo, caloGeometry);
+          if(helperFunctions::passesVeto<pat::Electron>(probe, *pfCandidates, *jets, caloNewNoPUDRp5CentralCalo)){
             ++nTPSS_veto;
             ++hist_nTPSS_veto;
           }
-          if(helperFunctions::passesLooseElecVeto(probe, *electrons, pv)){
+          if(helperFunctions::passesLooseElecVeto(probe, *electrons, pv, caloNewNoPUDRp5CentralCalo)){
             ++nTPSSLoose_veto;
             ++hist_nTPSSLoose_veto;
           }
@@ -795,7 +559,8 @@ bool zToLepProbeTrk<T>::filter(edm::Event& iEvent, const edm::EventSetup& iSetup
         if(helperFunctions::goodInvMassLepton<pat::Muon>(tag, probe, false) && (tag.charge()*probe.charge()) < 0.0){
           ++nTPOS;
           ++hist_nTPOS;
-          if(helperFunctions::passesVeto<pat::Muon>(probe, *pfCandidates, *jets)){
+          double caloNewNoPUDRp5CentralCalo = helperFunctions::caloNewNoPUDRp5CentralCalo(probe, *EBRecHits, *EERecHits, *HBHERecHits, *rhoCentralCalo, caloGeometry);
+          if(helperFunctions::passesVeto<pat::Muon>(probe, *pfCandidates, *jets, caloNewNoPUDRp5CentralCalo)){
             ++nTPOS_veto;
             ++hist_nTPOS_veto;
           }
@@ -807,7 +572,8 @@ bool zToLepProbeTrk<T>::filter(edm::Event& iEvent, const edm::EventSetup& iSetup
         if(helperFunctions::goodInvMassLepton<pat::Muon>(tag, probe, false) && (tag.charge()*probe.charge()) > 0.0){
           ++nTPSS;
           ++hist_nTPSS;
-          if(helperFunctions::passesVeto<pat::Muon>(probe, *pfCandidates, *jets)){
+          double caloNewNoPUDRp5CentralCalo = helperFunctions::caloNewNoPUDRp5CentralCalo(probe, *EBRecHits, *EERecHits, *HBHERecHits, *rhoCentralCalo, caloGeometry);
+          if(helperFunctions::passesVeto<pat::Muon>(probe, *pfCandidates, *jets, caloNewNoPUDRp5CentralCalo)){
             ++nTPSS_veto;
             ++hist_nTPSS_veto;
           }
@@ -826,11 +592,12 @@ bool zToLepProbeTrk<T>::filter(edm::Event& iEvent, const edm::EventSetup& iSetup
         if(helperFunctions::goodInvMassLepton<pat::Electron>(tag, probe, true) && (tag.charge()*probe.charge()) < 0.0){
           ++nTPOS;
           ++hist_nTPOS;
-          if(helperFunctions::passesVeto<pat::Tau>(probe, *pfCandidates, *jets)){
+          double caloNewNoPUDRp5CentralCalo = helperFunctions::caloNewNoPUDRp5CentralCalo(probe, *EBRecHits, *EERecHits, *HBHERecHits, *rhoCentralCalo, caloGeometry);
+          if(helperFunctions::passesVeto<pat::Tau>(probe, *pfCandidates, *jets, caloNewNoPUDRp5CentralCalo)){
             ++nTPOS_veto;
             ++hist_nTPOS_veto;
           }
-          if(helperFunctions::passesLooseElecVeto(probe, *electrons, pv)){
+          if(helperFunctions::passesLooseElecVeto(probe, *electrons, pv, caloNewNoPUDRp5CentralCalo)){
             ++nTPOSLoose_veto;
             ++hist_nTPOSLoose_veto;
           }
@@ -838,11 +605,12 @@ bool zToLepProbeTrk<T>::filter(edm::Event& iEvent, const edm::EventSetup& iSetup
         if(helperFunctions::goodInvMassLepton<pat::Electron>(tag, probe, true) && (tag.charge()*probe.charge()) > 0.0){
           ++nTPSS;
           ++hist_nTPSS;
-          if(helperFunctions::passesVeto<pat::Tau>(probe, *pfCandidates, *jets)){
+          double caloNewNoPUDRp5CentralCalo = helperFunctions::caloNewNoPUDRp5CentralCalo(probe, *EBRecHits, *EERecHits, *HBHERecHits, *rhoCentralCalo, caloGeometry);
+          if(helperFunctions::passesVeto<pat::Tau>(probe, *pfCandidates, *jets, caloNewNoPUDRp5CentralCalo)){
             ++nTPSS_veto;
             ++hist_nTPSS_veto;
           }
-          if(helperFunctions::passesLooseElecVeto(probe, *electrons, pv)){
+          if(helperFunctions::passesLooseElecVeto(probe, *electrons, pv, caloNewNoPUDRp5CentralCalo)){
             ++nTPSSLoose_veto;
             ++hist_nTPSSLoose_veto;
           }
@@ -857,7 +625,8 @@ bool zToLepProbeTrk<T>::filter(edm::Event& iEvent, const edm::EventSetup& iSetup
         if(helperFunctions::goodInvMassLepton<pat::Muon>(tag, probe, true) && (tag.charge()*probe.charge()) < 0.0){
           ++nTPOS;
           ++hist_nTPOS;
-          if(helperFunctions::passesVeto<pat::Tau>(probe, *pfCandidates, *jets)){
+          double caloNewNoPUDRp5CentralCalo = helperFunctions::caloNewNoPUDRp5CentralCalo(probe, *EBRecHits, *EERecHits, *HBHERecHits, *rhoCentralCalo, caloGeometry);
+          if(helperFunctions::passesVeto<pat::Tau>(probe, *pfCandidates, *jets, caloNewNoPUDRp5CentralCalo)){
             ++nTPOS_veto;
             ++hist_nTPOS_veto;
           }
@@ -869,7 +638,8 @@ bool zToLepProbeTrk<T>::filter(edm::Event& iEvent, const edm::EventSetup& iSetup
         if(helperFunctions::goodInvMassLepton<pat::Muon>(tag, probe, true) && (tag.charge()*probe.charge()) > 0.0){
           ++nTPSS;
           ++hist_nTPSS;
-          if(helperFunctions::passesVeto<pat::Tau>(probe, *pfCandidates, *jets)){
+          double caloNewNoPUDRp5CentralCalo = helperFunctions::caloNewNoPUDRp5CentralCalo(probe, *EBRecHits, *EERecHits, *HBHERecHits, *rhoCentralCalo, caloGeometry);
+          if(helperFunctions::passesVeto<pat::Tau>(probe, *pfCandidates, *jets, caloNewNoPUDRp5CentralCalo)){
             ++nTPSS_veto;
             ++hist_nTPSS_veto;
           }

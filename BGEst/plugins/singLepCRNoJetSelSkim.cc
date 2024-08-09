@@ -85,6 +85,7 @@
 
 #include "Analysis/Helper/interface/helperFunctions.h"
 #include "Analysis/Helper/interface/plotPrintFunctions.h"
+#include "Analysis/Helper/interface/selectingFunctions.h"
 //
 // class declaration
 //
@@ -170,7 +171,9 @@ singLepCRNoJetSelSkim<T>::singLepCRNoJetSelSkim(const edm::ParameterSet& iConfig
   isCRAB_ = iConfig.getParameter<bool>("isCRAB");
   isMETTriggers_ = iConfig.getParameter<bool>("isMETTriggers");
 
-  if(isMETTriggers_) HLTName_ = "MET Triggers";
+  std::string HLTCut = HLTName_;
+
+  if(isMETTriggers_) HLTCut = HLTCut + " && MET Triggers";
 
   std::string elecFile = "";
   std::string muonFile = "";
@@ -189,7 +192,7 @@ singLepCRNoJetSelSkim<T>::singLepCRNoJetSelSkim(const edm::ParameterSet& iConfig
 
   commonCuts = {
     "Total",
-    HLTName_,
+    HLTCut,
     "METFilters",
     "passecalBadCalibFilterUpdate"
   };
@@ -342,16 +345,10 @@ bool singLepCRNoJetSelSkim<T>::filter(edm::Event& iEvent, const edm::EventSetup&
   iEvent.getByToken(metsToken_, mets);
   const pat::MET &met = mets->at(0);
 
-  TVector2 metNoMu (met.px(), met.py());
-
   edm::Handle<std::vector<pat::PackedCandidate>> pfCandidates;
   iEvent.getByToken(pfCandToken_, pfCandidates);
 
-  for (const auto &pfCandidate : *pfCandidates) {
-    if (abs (pfCandidate.pdgId ()) != 13) continue;
-    TVector2 muon (pfCandidate.px(), pfCandidate.py());
-    metNoMu += muon;
-  }
+  TVector2 metNoMu = helperFunctions::calcMetNoMu(met, pfCandidates);
 
   edm::Handle<bool> passecalBadCalibFilterUpdate;
   iEvent.getByToken(ecalBadCalibFilterUpdateToken_, passecalBadCalibFilterUpdate);
@@ -376,9 +373,11 @@ bool singLepCRNoJetSelSkim<T>::filter(edm::Event& iEvent, const edm::EventSetup&
   std::vector<pat::Muon> tkMatchMuons;
   std::vector<pat::Tau> tkMatchTaus;
 
+  std::vector<pat::IsolatedTrack> selTracks;
+
   if(!isMETTriggers_) {if(helperFunctions::passLepHLTPath(iEvent,triggerBitsHLT,HLTName_)) {passSel[0] = true; passCut[0] = true;}}
 
-  if(isMETTriggers_) {if(helperFunctions::passMETHLTPath(iEvent,triggerBitsHLT)) {passSel[0] = true; passCut[0] = true;}}
+  if(isMETTriggers_) {if(helperFunctions::passLepHLTPath(iEvent,triggerBitsHLT,HLTName_) && helperFunctions::passMETHLTPath(iEvent,triggerBitsHLT)) {passSel[0] = true; passCut[0] = true;}}
 
   if(helperFunctions::passMETFilters(iEvent,triggerBitsPAT)) {passSel[1] = true; if(passCut[0]) passCut[1] = true;}
 
@@ -395,35 +394,10 @@ bool singLepCRNoJetSelSkim<T>::filter(edm::Event& iEvent, const edm::EventSetup&
     for(int j = 0; j < int(electronCuts.size()); ++j) {passSel.push_back(false); passCut.push_back(false); auxPassCut.push_back(false);}
 
     int startElecIdx = int(commonCuts.size()) - 1;
-    
+
     for (const auto& electron : *electrons) {
-      
-      int cutIdxInc = 0;
 
-      if(electron.pt() > 35.)
-        {passSel[startElecIdx+cutIdxInc] = true; if(passCut[startElecIdx-1]) auxPassCut[cutIdxInc] = true;}
-
-      ++cutIdxInc;
-
-      if(abs(electron.eta()) < 2.1)
-        {passSel[startElecIdx+cutIdxInc] = true; if(auxPassCut[cutIdxInc-1]) auxPassCut[cutIdxInc] = true;}
-
-      ++cutIdxInc;
-
-      if(electron.electronID("cutBasedElectronID-RunIIIWinter22-V1-tight"))
-        {passSel[startElecIdx+cutIdxInc] = true; if(auxPassCut[cutIdxInc-1]) auxPassCut[cutIdxInc] = true;}
-
-      ++cutIdxInc;
-
-      if(helperFunctions::elecD0(electron, pv))
-        {passSel[startElecIdx+cutIdxInc] = true; if(auxPassCut[cutIdxInc-1]) auxPassCut[cutIdxInc] = true;}
-
-      ++cutIdxInc;
-
-      if(helperFunctions::elecDZ(electron, pv))
-        {passSel[startElecIdx+cutIdxInc] = true; if(auxPassCut[cutIdxInc-1]) auxPassCut[cutIdxInc] = true;}
-
-      if(auxPassCut[cutIdxInc]) selElectrons.push_back(electron);
+      selectingFunctions::singElecSel(passSel,passCut,auxPassCut,electron,startElecIdx,pv,selElectrons,35.0);
       
       for(int j = 0; j < int(auxPassCut.size()); ++j){
         if(auxPassCut[j]) passCut[j+int(commonCuts.size())-1] = true;
@@ -442,27 +416,7 @@ bool singLepCRNoJetSelSkim<T>::filter(edm::Event& iEvent, const edm::EventSetup&
     
     for (const auto& muon : *muons) {
       
-      int cutIdxInc = 0;
-      
-      if(muon.pt() > 35.)
-        {passSel[startMuonIdx+cutIdxInc] = true; if(passCut[startMuonIdx-1]) auxPassCut[cutIdxInc] = true;}
-
-      ++cutIdxInc;
-
-      if(abs(muon.eta()) < 2.1)
-        {passSel[startMuonIdx+cutIdxInc] = true; if(auxPassCut[cutIdxInc-1]) auxPassCut[cutIdxInc] = true;}
-
-      ++cutIdxInc;
-
-      if(muon.isTightMuon(pv))
-        {passSel[startMuonIdx+cutIdxInc] = true; if(auxPassCut[cutIdxInc-1]) auxPassCut[cutIdxInc] = true;}
-
-      ++cutIdxInc;
-
-      if(helperFunctions::muonIso(muon) < 0.15)
-        {passSel[startMuonIdx+cutIdxInc] = true; if(auxPassCut[cutIdxInc-1]) auxPassCut[cutIdxInc] = true;}
-
-      if(auxPassCut[cutIdxInc]) selMuons.push_back(muon);
+      selectingFunctions::singMuonSel(passSel,passCut,auxPassCut,muon,startMuonIdx,pv,selMuons);
       
       for(int j = 0; j < int(auxPassCut.size()); ++j){
         if(auxPassCut[j]) passCut[j+int(commonCuts.size())-1] = true;
@@ -481,22 +435,7 @@ bool singLepCRNoJetSelSkim<T>::filter(edm::Event& iEvent, const edm::EventSetup&
     
     for (const auto& tau : *taus) {
       
-      int cutIdxInc = 0;
-
-      if(tau.pt() > 50.)
-        {passSel[startTauIdx+cutIdxInc] = true; if(passCut[startTauIdx-1]) auxPassCut[cutIdxInc] = true;}
-
-      ++cutIdxInc;
-
-      if(abs(tau.eta()) < 2.1)
-        {passSel[startTauIdx+cutIdxInc] = true; if(auxPassCut[cutIdxInc-1]) auxPassCut[cutIdxInc] = true;}
-
-      ++cutIdxInc;
-      
-      if(helperFunctions::passesDecayModeReconstruction(tau) && helperFunctions::passesLightFlavorRejection(tau))
-        {passSel[startTauIdx+cutIdxInc] = true; if(auxPassCut[cutIdxInc-1]) auxPassCut[cutIdxInc] = true;}
-
-      if(auxPassCut[cutIdxInc]) selTaus.push_back(tau);
+      selectingFunctions::singTauSel(passSel,passCut,auxPassCut,tau,startTauIdx,selTaus);
 
       for(int j = 0; j < int(auxPassCut.size()); ++j){
         if(auxPassCut[j]) passCut[j+int(commonCuts.size())-1] = true;
@@ -522,169 +461,21 @@ bool singLepCRNoJetSelSkim<T>::filter(edm::Event& iEvent, const edm::EventSetup&
 
   for (const auto& track : *tracks) {
 
-    int cutIdxInc = 0;
-
-    if(track.pt() > cutTrackPt) 
-      {passSel[startTrackIdx+cutIdxInc] = true; if(passCut[startTrackIdx+cutIdxInc-1]) auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep] = true;}
-
-    ++cutIdxInc;
-
-    // These are calculated differently for cumulative and individual selections, since individual takes into account all leptons,
-    // and cumulative only takes into account leptons that passed the cuts
-    if(std::is_same<T, pat::Electron>::value){
-      for(const auto& lepton : selElectrons) {
-        if(deltaR (track, lepton) < 0.1)
-          {if(auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep-1]) auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep] = true; tkMatchElectrons.push_back(lepton);}
-      }
-    
-      for(const auto& electron : *electrons) {
-        if(deltaR (track, electron) < 0.1) passSel[startTrackIdx+cutIdxInc] = true;
-      }
-    }
-
-    if(std::is_same<T, pat::Muon>::value){
-      for(const auto& lepton : selMuons) {
-        if(deltaR (track, lepton) < 0.1)
-          {if(auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep-1]) auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep] = true; tkMatchMuons.push_back(lepton);}
-      }
-
-      for(const auto& muon : *muons) {
-        if(deltaR (track, muon) < 0.1) passSel[startTrackIdx+cutIdxInc] = true;
-      }
-    }
-
-    if(std::is_same<T, pat::Tau>::value){
-      for(const auto& lepton : selTaus) {
-        if(deltaR (track, lepton) < 0.1)
-          {if(auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep-1]) auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep] = true; tkMatchTaus.push_back(lepton);}
-      }
-
-      for(const auto& tau : *taus) {
-        if(deltaR (track, tau) < 0.1) passSel[startTrackIdx+cutIdxInc] = true;
-      }
-    }
-
-    ++cutIdxInc;
-
-    if(fabs(track.eta()) < 2.1) 
-      {passSel[startTrackIdx+cutIdxInc] = true; if(auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep-1]) auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep] = true;}
-
-    ++cutIdxInc;
-
-    if((fabs(track.eta()) < 1.42) || (fabs(track.eta()) > 1.65)) 
-      {passSel[startTrackIdx+cutIdxInc] = true; if(auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep-1]) auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep] = true;}
-
-    ++cutIdxInc;
-
-    if((fabs(track.eta()) < 0.15) || (fabs(track.eta()) > 0.35)) 
-      {passSel[startTrackIdx+cutIdxInc] = true; if(auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep-1]) auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep] = true;}
-
-    ++cutIdxInc;
-
-    if((fabs(track.eta()) < 1.55) || (fabs(track.eta()) > 1.85)) 
-      {passSel[startTrackIdx+cutIdxInc] = true; if(auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep-1]) auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep] = true;}
-
-    ++cutIdxInc;
-
-    if(!helperFunctions::inTOBCrack(track)) 
-      {passSel[startTrackIdx+cutIdxInc] = true; if(auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep-1]) auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep] = true;}
-
-    ++cutIdxInc;
-
-    if(helperFunctions::isFiducialTrack(track,vetoListElec,0.05,-1.0))
-      {passSel[startTrackIdx+cutIdxInc] = true; if(auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep-1]) auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep] = true;}
-
-    ++cutIdxInc;
-
-    if(helperFunctions::isFiducialTrack(track,vetoListMu,0.05,-1.0))
-      {passSel[startTrackIdx+cutIdxInc] = true; if(auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep-1]) auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep] = true;}
-
-    ++cutIdxInc;
-
-    if(!helperFunctions::isCloseToBadEcalChannel(track,0.05,EcalAllDeadChannelsValMap,EcalAllDeadChannelsBitMap))
-      {passSel[startTrackIdx+cutIdxInc] = true; if(auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep-1]) auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep] = true;}
-
-    ++cutIdxInc;
-
-    if(track.hitPattern().numberOfValidPixelHits() >= 4) 
-      {passSel[startTrackIdx+cutIdxInc] = true; if(auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep-1]) auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep] = true;}
-
-    ++cutIdxInc;
-
-    if(track.hitPattern().numberOfValidHits() >= 4) 
-      {passSel[startTrackIdx+cutIdxInc] = true; if(auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep-1]) auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep] = true;}
-
-    ++cutIdxInc;
-
-    if(track.lostInnerLayers() == 0) 
-      {passSel[startTrackIdx+cutIdxInc] = true; if(auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep-1]) auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep] = true;}
-
-    ++cutIdxInc;
-
-    if(helperFunctions::hitDrop_missingMiddleHits(track) == 0) 
-      {passSel[startTrackIdx+cutIdxInc] = true; if(auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep-1]) auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep] = true;}
-
-    ++cutIdxInc;
-
-    if(((track.pfIsolationDR03().chargedHadronIso() + track.pfIsolationDR03().puChargedHadronIso()) / track.pt()) < 0.05) 
-      {passSel[startTrackIdx+cutIdxInc] = true; if(auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep-1]) auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep] = true;}
-
-    ++cutIdxInc;
-
-    if(fabs(track.dxy()) < 0.02) 
-      {passSel[startTrackIdx+cutIdxInc] = true; if(auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep-1]) auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep] = true;}
-
-    ++cutIdxInc;
-
-    if(fabs(track.dz()) < 0.5) 
-      {passSel[startTrackIdx+cutIdxInc] = true; if(auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep-1]) auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep] = true;}
-
-    if(std::is_same<T, pat::Electron>::value || std::is_same<T, pat::Muon>::value){
-
-      ++cutIdxInc;
-
-      if(helperFunctions::dRMinJet(track, *jets) > 0.5)
-        {passSel[startTrackIdx+cutIdxInc] = true; if(auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep-1]) auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep] = true;}
-
-    }
-
-    ++cutIdxInc;
-
-    // Both cuts below need the track to pass the track selection, that is why the individual efficiency has to take into account the previous cuts
-
     if(std::is_same<T, pat::Electron>::value){
 
-      if(int(tkMatchElectrons.size()) > 0)
-        {if(auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep-1]){passSel[startTrackIdx+cutIdxInc] = true; auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep] = true;}}
-
-      ++cutIdxInc;
-
-      if(int(tkMatchElectrons.size()) > 0)
-        {if(auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep-1]){passSel[startTrackIdx+cutIdxInc] = true; auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep] = true;}}
+      selectingFunctions::singTrackSel<pat::Electron>(passSel, passCut, auxPassCut, track, startTrackIdx, getStTrkIdxLep, tkMatchElectrons, selElectrons, electrons, cutTrackPt, vetoListElec, vetoListMu, EcalAllDeadChannelsValMap, EcalAllDeadChannelsBitMap, jets, selTracks);
 
     }
 
     if(std::is_same<T, pat::Muon>::value){
 
-      if(int(tkMatchMuons.size()) > 0)
-        {if(auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep-1]){passSel[startTrackIdx+cutIdxInc] = true; auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep] = true;}}
-
-      ++cutIdxInc;
-
-      if(int(tkMatchMuons.size()) > 0)
-        {if(auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep-1]){passSel[startTrackIdx+cutIdxInc] = true; auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep] = true;}}
+      selectingFunctions::singTrackSel<pat::Muon>(passSel, passCut, auxPassCut, track, startTrackIdx, getStTrkIdxLep, tkMatchMuons, selMuons, muons, cutTrackPt, vetoListElec, vetoListMu, EcalAllDeadChannelsValMap, EcalAllDeadChannelsBitMap, jets, selTracks);
 
     }
 
     if(std::is_same<T, pat::Tau>::value){
 
-      if(int(tkMatchTaus.size()) > 0)
-        {if(auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep-1]){passSel[startTrackIdx+cutIdxInc] = true; auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep] = true;}}
-
-      ++cutIdxInc;
-
-      if(int(tkMatchTaus.size()) > 0)
-        {if(auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep-1]){passSel[startTrackIdx+cutIdxInc] = true; auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep] = true;}}
+      selectingFunctions::singTrackSel<pat::Tau>(passSel, passCut, auxPassCut, track, startTrackIdx, getStTrkIdxLep, tkMatchTaus, selTaus, taus, cutTrackPt, vetoListElec, vetoListMu, EcalAllDeadChannelsValMap, EcalAllDeadChannelsBitMap, jets, selTracks);
 
     }
 
@@ -716,6 +507,7 @@ bool singLepCRNoJetSelSkim<T>::filter(edm::Event& iEvent, const edm::EventSetup&
 
   if(passCut[int(passSel.size())-1]){
     std::srand(std::time(0)); // use current time as seed for random generator
+
     if(std::is_same<T, pat::Electron>::value){
       int random_pos = std::rand() % tkMatchElectrons.size();  // Modulo to restrict the number of random values to be at most A.size()-1
       pat::Electron randomLep = tkMatchElectrons[random_pos];
@@ -728,6 +520,7 @@ bool singLepCRNoJetSelSkim<T>::filter(edm::Event& iEvent, const edm::EventSetup&
         if(passes[0]) oneDHists_.at("hist_metNoMu_passMETTriggers")->Fill(metNoMuNoLep.Mod());
       }
     }
+
     if(std::is_same<T, pat::Muon>::value){
       int random_pos = std::rand() % tkMatchMuons.size();  // Modulo to restrict the number of random values to be at most A.size()-1
       pat::Muon randomLep = tkMatchMuons[random_pos];
@@ -740,6 +533,7 @@ bool singLepCRNoJetSelSkim<T>::filter(edm::Event& iEvent, const edm::EventSetup&
         if(passes[0]) oneDHists_.at("hist_metNoMu_passMETTriggers")->Fill(metNoMuNoLep.Mod());
       }
     }
+
     if(std::is_same<T, pat::Tau>::value){
       int random_pos = std::rand() % tkMatchTaus.size();  // Modulo to restrict the number of random values to be at most A.size()-1
       pat::Tau randomLep = tkMatchTaus[random_pos];
@@ -752,6 +546,7 @@ bool singLepCRNoJetSelSkim<T>::filter(edm::Event& iEvent, const edm::EventSetup&
         if(passes[0]) oneDHists_.at("hist_metNoMu_passMETTriggers")->Fill(metNoMuNoLep.Mod());
       }
     }
+    
   }
 
   for(int i = 1; i <= int(passSel.size()); i++){

@@ -55,6 +55,8 @@
 #include "FWCore/PluginManager/interface/ModuleDef.h"
 
 #include "Analysis/Helper/interface/helperFunctions.h"
+#include "Analysis/Helper/interface/plotPrintFunctions.h"
+#include "Analysis/Helper/interface/selectingFunctions.h"
 //
 // class declaration
 //
@@ -167,27 +169,9 @@ leptonTagSkim<T>::leptonTagSkim(const edm::ParameterSet& iConfig)
 
 template<class T>
 leptonTagSkim<T>::~leptonTagSkim() {
-  // do anything here that needs to be done at desctruction time
-  // (e.g. close files, deallocate resources etc.)
-  int maxSize = 0;
-  for(int i = 1; i <= int(oneDHists_.at("cutflow")->GetNbinsX()); i++){
-    std::string label = oneDHists_.at("cutflow")->GetXaxis()->GetLabels()->At(i-1)->GetName();
-    if(int(label.size()) > maxSize) maxSize = int(label.size());
-  }
+  
+  plotPrintFunctions::printCuts(oneDHists_);
 
-  std::string cut = "Cut Value";
-  std::cout << cut << std::string((maxSize - int(cut.size()) + 1),' ') << "\t\tCumul.\t\tIndiv." << std::endl;
-
-  double maxValue = double(oneDHists_.at("selection")->GetBinContent(1));
-  for(int i = 1; i <= int(oneDHists_.at("cutflow")->GetNbinsX()); i++){
-    std::cout << std::setprecision(3) << std::fixed;
-    std::string label = oneDHists_.at("cutflow")->GetXaxis()->GetLabels()->At(i-1)->GetName();
-    int size = int(label.size());
-    int nBlank = maxSize - size + 1;
-    std::cout << oneDHists_.at("cutflow")->GetXaxis()->GetLabels()->At(i-1)->GetName() << std::string(nBlank,' ') << "\t\t" << double(oneDHists_.at("cutflow")->GetBinContent(i)) * 100.0 / maxValue << "% \t" << double(oneDHists_.at("selection")->GetBinContent(i)) * 100.0 / maxValue << "%" << std::endl;
-  }
-  //
-  // please remove this method altogether if it would be left empty
 }
 
 //
@@ -230,6 +214,10 @@ bool leptonTagSkim<T>::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
   edm::Handle<std::vector<pat::TriggerObjectStandAlone> > triggerObjs;
   iEvent.getByToken(trigobjsToken_, triggerObjs);
 
+  std::vector<pat::Electron> selElectrons;
+  std::vector<pat::Muon> selMuons;
+  std::vector<pat::Tau> selTaus;
+
   if(helperFunctions::passLepHLTPath(iEvent,triggerBitsHLT,HLTName_)) {passSel[0] = true; passCut[0] = true;}
 
   if(helperFunctions::passMETFilters(iEvent,triggerBitsPAT)) {passSel[1] = true; if(passCut[0]) passCut[1] = true;}
@@ -249,31 +237,8 @@ bool leptonTagSkim<T>::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
     int startElecIdx = int(commonCuts.size()) - 1;
     
     for (const auto& electron : *electrons) {
-      
-      int cutIdxInc = 0;
 
-      if(electron.pt() > 32.)
-        {passSel[startElecIdx+cutIdxInc] = true; if(passCut[startElecIdx-1]) auxPassCut[cutIdxInc] = true;}
-
-      ++cutIdxInc;
-
-      if(abs(electron.eta()) < 2.1)
-        {passSel[startElecIdx+cutIdxInc] = true; if(auxPassCut[cutIdxInc-1]) auxPassCut[cutIdxInc] = true;}
-
-      ++cutIdxInc;
-
-      if(electron.electronID("cutBasedElectronID-RunIIIWinter22-V1-tight"))
-        {passSel[startElecIdx+cutIdxInc] = true; if(auxPassCut[cutIdxInc-1]) auxPassCut[cutIdxInc] = true;}
-
-      ++cutIdxInc;
-
-      if(helperFunctions::elecD0(electron, pv))
-        {passSel[startElecIdx+cutIdxInc] = true; if(auxPassCut[cutIdxInc-1]) auxPassCut[cutIdxInc] = true;}
-
-      ++cutIdxInc;
-
-      if(helperFunctions::elecDZ(electron, pv))
-        {passSel[startElecIdx+cutIdxInc] = true; if(auxPassCut[cutIdxInc-1]) auxPassCut[cutIdxInc] = true;}
+      selectingFunctions::singElecSel(passSel,passCut,auxPassCut,electron,startElecIdx,pv,selElectrons,32.0);
       
       for(int j = 0; j < int(auxPassCut.size()); ++j){
         if(auxPassCut[j]) passCut[j+int(commonCuts.size())-1] = true;
@@ -292,25 +257,7 @@ bool leptonTagSkim<T>::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
     
     for (const auto& muon : *muons) {
       
-      int cutIdxInc = 0;
-      
-      if(muon.pt() > 26.)
-        {passSel[startMuonIdx+cutIdxInc] = true; if(passCut[startMuonIdx-1]) auxPassCut[cutIdxInc] = true;}
-
-      ++cutIdxInc;
-
-      if(abs(muon.eta()) < 2.1)
-        {passSel[startMuonIdx+cutIdxInc] = true; if(auxPassCut[cutIdxInc-1]) auxPassCut[cutIdxInc] = true;}
-
-      ++cutIdxInc;
-
-      if(muon.isTightMuon(pv))
-        {passSel[startMuonIdx+cutIdxInc] = true; if(auxPassCut[cutIdxInc-1]) auxPassCut[cutIdxInc] = true;}
-
-      ++cutIdxInc;
-
-      if(helperFunctions::muonIso(muon) < 0.15)
-        {passSel[startMuonIdx+cutIdxInc] = true; if(auxPassCut[cutIdxInc-1]) auxPassCut[cutIdxInc] = true;}
+      selectingFunctions::singMuonSel(passSel,passCut,auxPassCut,muon,startMuonIdx,pv,selMuons);
       
       for(int j = 0; j < int(auxPassCut.size()); ++j){
         if(auxPassCut[j]) passCut[j+int(commonCuts.size())-1] = true;
@@ -329,20 +276,7 @@ bool leptonTagSkim<T>::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
     
     for (const auto& tau : *taus) {
       
-      int cutIdxInc = 0;
-
-      if(tau.pt() > 50.)
-        {passSel[startTauIdx+cutIdxInc] = true; if(passCut[startTauIdx-1]) auxPassCut[cutIdxInc] = true;}
-
-      ++cutIdxInc;
-
-      if(abs(tau.eta()) < 2.1)
-        {passSel[startTauIdx+cutIdxInc] = true; if(auxPassCut[cutIdxInc-1]) auxPassCut[cutIdxInc] = true;}
-
-      ++cutIdxInc;
-      
-      if(helperFunctions::passesDecayModeReconstruction(tau) && helperFunctions::passesLightFlavorRejection(tau))
-        {passSel[startTauIdx+cutIdxInc] = true; if(auxPassCut[cutIdxInc-1]) auxPassCut[cutIdxInc] = true;}
+      selectingFunctions::singTauSel(passSel,passCut,auxPassCut,tau,startTauIdx,selTaus);
 
       for(int j = 0; j < int(auxPassCut.size()); ++j){
         if(auxPassCut[j]) passCut[j+int(commonCuts.size())-1] = true;

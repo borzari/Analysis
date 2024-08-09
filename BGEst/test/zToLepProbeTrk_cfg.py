@@ -5,11 +5,12 @@ from Analysis.BGEst.zToLepProbeTrk_cfi import *
 ##### Set up process #####
 ###########################################################
 
-nEvents = 100000
+nEvents = 10000
 
 reportEvery = int(nEvents/10)
 
-isCRAB = True
+isCRAB = False
+# isCRAB = True
 
 if isCRAB:
     nEvents = -1
