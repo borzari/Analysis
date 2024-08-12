@@ -192,11 +192,31 @@ plotterSingLepCRNoJetSelSkim<T>::plotterSingLepCRNoJetSelSkim(const edm::Paramet
   std::string tauStr = "tau";
   std::string trackStr = "track";
 
-  plotPrintFunctions::createCommonHists(fs_,oneDHists_,twoDHists_);
-  if(std::is_same<T, pat::Electron>::value) plotPrintFunctions::createObjHists<pat::Electron>(fs_,oneDHists_,elecStr);
-  if(std::is_same<T, pat::Muon>::value) plotPrintFunctions::createObjHists<pat::Muon>(fs_,oneDHists_,muonStr);
-  if(std::is_same<T, pat::Tau>::value) plotPrintFunctions::createObjHists<pat::Tau>(fs_,oneDHists_,tauStr);
-  plotPrintFunctions::createObjHists<pat::IsolatedTrack>(fs_,oneDHists_,trackStr);
+  TFileDirectory NLayers4 = fs_->mkdir("NLayers4");
+  TFileDirectory NLayers5 = fs_->mkdir("NLayers5");
+  TFileDirectory NLayers6Plus = fs_->mkdir("NLayers6Plus");
+
+  plotPrintFunctions::createCommonHists(fs_,oneDHists_,twoDHists_,NLayers4,4);
+  plotPrintFunctions::createCommonHists(fs_,oneDHists_,twoDHists_,NLayers5,5);
+  plotPrintFunctions::createCommonHists(fs_,oneDHists_,twoDHists_,NLayers6Plus,6);
+  if(std::is_same<T, pat::Electron>::value) {
+    plotPrintFunctions::createObjHists<pat::Electron>(fs_,oneDHists_,elecStr,NLayers4,4);
+    plotPrintFunctions::createObjHists<pat::Electron>(fs_,oneDHists_,elecStr,NLayers5,5);
+    plotPrintFunctions::createObjHists<pat::Electron>(fs_,oneDHists_,elecStr,NLayers6Plus,6);
+  }
+  if(std::is_same<T, pat::Muon>::value) {
+    plotPrintFunctions::createObjHists<pat::Muon>(fs_,oneDHists_,muonStr,NLayers4,4);
+    plotPrintFunctions::createObjHists<pat::Muon>(fs_,oneDHists_,muonStr,NLayers5,5);
+    plotPrintFunctions::createObjHists<pat::Muon>(fs_,oneDHists_,muonStr,NLayers6Plus,6);
+  }
+  if(std::is_same<T, pat::Tau>::value) {
+    plotPrintFunctions::createObjHists<pat::Tau>(fs_,oneDHists_,tauStr,NLayers4,4);
+    plotPrintFunctions::createObjHists<pat::Tau>(fs_,oneDHists_,tauStr,NLayers5,5);
+    plotPrintFunctions::createObjHists<pat::Tau>(fs_,oneDHists_,tauStr,NLayers6Plus,6);
+  }
+  plotPrintFunctions::createObjHists<pat::IsolatedTrack>(fs_,oneDHists_,trackStr,NLayers4,4);
+  plotPrintFunctions::createObjHists<pat::IsolatedTrack>(fs_,oneDHists_,trackStr,NLayers5,5);
+  plotPrintFunctions::createObjHists<pat::IsolatedTrack>(fs_,oneDHists_,trackStr,NLayers6Plus,6);
 
 }
 
@@ -377,15 +397,17 @@ bool plotterSingLepCRNoJetSelSkim<T>::filter(edm::Event& iEvent, const edm::Even
 
     }
 
-    variables.tracks = selTracks;
-
     for(int j = 0; j < int(auxPassCut.size()); ++j){
       auxPassCut[j] = false;
     }
 
   }
 
+  variables.tracks = selTracks;
+
   TVector2 metNoMuNoLep;
+  double deltaPhiMetJetLeadingVsLeptonMet;
+  double deltaPhiMetJetLeadingVsLeptonMetNoMu;
   double deltaPhiMetJetLeadingVsLeptonMetNoMuMinusOnePt;
 
   std::srand(std::time(0)); // use current time as seed for random generator
@@ -396,8 +418,12 @@ bool plotterSingLepCRNoJetSelSkim<T>::filter(edm::Event& iEvent, const edm::Even
     pat::Electron randomLep = tkMatchElectrons[random_pos];
     metNoMuNoLep = TVector2(metNoMu.Px() + randomLep.px(), metNoMu.Py() + randomLep.py());
     variables.metNoMuNoLep = metNoMuNoLep;
+    deltaPhiMetJetLeadingVsLeptonMet = fabs(deltaPhi(met.phi(),leadingJet.phi()));
+    deltaPhiMetJetLeadingVsLeptonMetNoMu = fabs(deltaPhi(metNoMu.Phi(),leadingJet.phi()));
     deltaPhiMetJetLeadingVsLeptonMetNoMuMinusOnePt = fabs(deltaPhi(metNoMuNoLep.Phi(),leadingJet.phi()));
-    variables.DeltaPhiJetMET = deltaPhiMetJetLeadingVsLeptonMetNoMuMinusOnePt;}
+    variables.DeltaPhiJetMET = deltaPhiMetJetLeadingVsLeptonMet;
+    variables.DeltaPhiJetMETNoMu = deltaPhiMetJetLeadingVsLeptonMetNoMu;
+    variables.DeltaPhiJetMETNoMuNoLep = deltaPhiMetJetLeadingVsLeptonMetNoMuMinusOnePt;}
   }
 
   if(std::is_same<T, pat::Muon>::value){
@@ -406,8 +432,12 @@ bool plotterSingLepCRNoJetSelSkim<T>::filter(edm::Event& iEvent, const edm::Even
     pat::Muon randomLep = tkMatchMuons[random_pos];
     metNoMuNoLep = TVector2(metNoMu.Px(), metNoMu.Py());
     variables.metNoMuNoLep = metNoMuNoLep;
+    deltaPhiMetJetLeadingVsLeptonMet = fabs(deltaPhi(met.phi(),leadingJet.phi()));
+    deltaPhiMetJetLeadingVsLeptonMetNoMu = fabs(deltaPhi(metNoMu.Phi(),leadingJet.phi()));
     deltaPhiMetJetLeadingVsLeptonMetNoMuMinusOnePt = fabs(deltaPhi(metNoMuNoLep.Phi(),leadingJet.phi()));
-    variables.DeltaPhiJetMET = deltaPhiMetJetLeadingVsLeptonMetNoMuMinusOnePt;}
+    variables.DeltaPhiJetMET = deltaPhiMetJetLeadingVsLeptonMet;
+    variables.DeltaPhiJetMETNoMu = deltaPhiMetJetLeadingVsLeptonMetNoMu;
+    variables.DeltaPhiJetMETNoMuNoLep = deltaPhiMetJetLeadingVsLeptonMetNoMuMinusOnePt;}
   }
 
   if(std::is_same<T, pat::Tau>::value){
@@ -416,11 +446,17 @@ bool plotterSingLepCRNoJetSelSkim<T>::filter(edm::Event& iEvent, const edm::Even
     pat::Tau randomLep = tkMatchTaus[random_pos];
     metNoMuNoLep = TVector2(metNoMu.Px() + randomLep.px(), metNoMu.Py() + randomLep.py());
     variables.metNoMuNoLep = metNoMuNoLep;
+    deltaPhiMetJetLeadingVsLeptonMet = fabs(deltaPhi(met.phi(),leadingJet.phi()));
+    deltaPhiMetJetLeadingVsLeptonMetNoMu = fabs(deltaPhi(metNoMu.Phi(),leadingJet.phi()));
     deltaPhiMetJetLeadingVsLeptonMetNoMuMinusOnePt = fabs(deltaPhi(metNoMuNoLep.Phi(),leadingJet.phi()));
-    variables.DeltaPhiJetMET = deltaPhiMetJetLeadingVsLeptonMetNoMuMinusOnePt;}
+    variables.DeltaPhiJetMET = deltaPhiMetJetLeadingVsLeptonMet;
+    variables.DeltaPhiJetMETNoMu = deltaPhiMetJetLeadingVsLeptonMetNoMu;
+    variables.DeltaPhiJetMETNoMuNoLep = deltaPhiMetJetLeadingVsLeptonMetNoMuMinusOnePt;}
   }
     
-  plotPrintFunctions::plotVariables(oneDHists_, twoDHists_, variables);
+  plotPrintFunctions::plotVariables(oneDHists_, twoDHists_, variables, 4);
+  plotPrintFunctions::plotVariables(oneDHists_, twoDHists_, variables, 5);
+  plotPrintFunctions::plotVariables(oneDHists_, twoDHists_, variables, 6);
 
   return isGood;
 }

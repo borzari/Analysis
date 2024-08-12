@@ -267,7 +267,7 @@ class selectingFunctions {
     if(int(tkMatchLeptons.size()) > 0)
       {if(auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep-1]){passSel[startTrackIdx+cutIdxInc] = true; auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep] = true;}}
 
-    if(startTrackIdx+cutIdxInc-getStTrkIdxLep) selTracks.push_back(track);
+    if(auxPassCut[startTrackIdx+cutIdxInc-getStTrkIdxLep]) selTracks.push_back(track);
 
   }
 
