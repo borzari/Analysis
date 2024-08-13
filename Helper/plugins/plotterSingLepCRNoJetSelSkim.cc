@@ -75,6 +75,9 @@
 #include "DataFormats/EcalDetId/interface/EEDetId.h"
 #include "CondFormats/EcalObjects/interface/EcalChannelStatus.h"
 #include "CondFormats/DataRecord/interface/EcalChannelStatusRcd.h"
+#include "DataFormats/HepMCCandidate/interface/GenParticle.h"
+#include "DataFormats/PatCandidates/interface/PackedGenParticle.h"
+#include "SimDataFormats/GeneratorProducts/interface/GenEventInfoProduct.h"
 
 #include "CommonTools/UtilAlgos/interface/TFileService.h"
 #include "FWCore/ServiceRegistry/interface/Service.h"
@@ -86,6 +89,7 @@
 #include "Analysis/Helper/interface/helperFunctions.h"
 #include "Analysis/Helper/interface/plotPrintFunctions.h"
 #include "Analysis/Helper/interface/selectingFunctions.h"
+#include "Analysis/Helper/interface/sfFunctions.h"
 //
 // class declaration
 //
@@ -119,6 +123,7 @@ private:
   edm::EDGetTokenT<std::vector<pat::Jet>> jetsToken_;
   edm::EDGetTokenT<std::vector<pat::MET>> metsToken_;
   edm::EDGetTokenT<std::vector<pat::PackedCandidate>> pfCandToken_;
+  edm::EDGetTokenT<GenEventInfoProduct> generatorToken_;
   edm::ESGetToken<CaloGeometry, CaloGeometryRecord> caloGeometryToken_;
   edm::ESGetToken<EcalChannelStatus, EcalChannelStatusRcd> ecalStatusToken_;
   edm::EDGetTokenT<bool> ecalBadCalibFilterUpdateToken_;
@@ -159,6 +164,7 @@ plotterSingLepCRNoJetSelSkim<T>::plotterSingLepCRNoJetSelSkim(const edm::Paramet
       jetsToken_(consumes<std::vector<pat::Jet>>(iConfig.getParameter<edm::InputTag>("jets"))),
       metsToken_(consumes<std::vector<pat::MET>>(iConfig.getParameter<edm::InputTag>("mets"))),
       pfCandToken_(consumes<std::vector<pat::PackedCandidate>>(iConfig.getParameter<edm::InputTag>("pfCandidates"))),
+      generatorToken_(consumes<GenEventInfoProduct>(iConfig.getParameter<edm::InputTag>("generator"))),
       caloGeometryToken_(esConsumes()),
       ecalStatusToken_(esConsumes()),
       ecalBadCalibFilterUpdateToken_(consumes<bool>(iConfig.getParameter<edm::InputTag>("ecalBadCalibReducedMINIAODFilter"))) {
@@ -280,6 +286,9 @@ bool plotterSingLepCRNoJetSelSkim<T>::filter(edm::Event& iEvent, const edm::Even
   variables.met = met;
   variables.metNoMu = metNoMu;
 
+  edm::Handle<GenEventInfoProduct> generator;
+  iEvent.getByToken(generatorToken_, generator);
+
   edm::Handle<bool> passecalBadCalibFilterUpdate;
   iEvent.getByToken(ecalBadCalibFilterUpdateToken_, passecalBadCalibFilterUpdate);
 
@@ -323,9 +332,7 @@ bool plotterSingLepCRNoJetSelSkim<T>::filter(edm::Event& iEvent, const edm::Even
 
       selectingFunctions::singElecSel(passSel,passCut,auxPassCut,electron,startElecIdx,pv,selElectrons,35.0);
 
-      for(int j = 0; j < int(auxPassCut.size()); ++j){
-        auxPassCut[j] = false;
-      }
+      for(int j = 0; j < int(auxPassCut.size()); ++j) auxPassCut[j] = false;
 
     }
 
@@ -341,9 +348,7 @@ bool plotterSingLepCRNoJetSelSkim<T>::filter(edm::Event& iEvent, const edm::Even
       
       selectingFunctions::singMuonSel(passSel,passCut,auxPassCut,muon,startMuonIdx,pv,selMuons);
       
-      for(int j = 0; j < int(auxPassCut.size()); ++j){
-        auxPassCut[j] = false;
-      }
+      for(int j = 0; j < int(auxPassCut.size()); ++j) auxPassCut[j] = false;
         
     }
 
@@ -359,9 +364,7 @@ bool plotterSingLepCRNoJetSelSkim<T>::filter(edm::Event& iEvent, const edm::Even
       
       selectingFunctions::singTauSel(passSel,passCut,auxPassCut,tau,startTauIdx,selTaus);
 
-      for(int j = 0; j < int(auxPassCut.size()); ++j){
-        auxPassCut[j] = false;
-      }
+      for(int j = 0; j < int(auxPassCut.size()); ++j) auxPassCut[j] = false;
         
     }
 
@@ -397,9 +400,7 @@ bool plotterSingLepCRNoJetSelSkim<T>::filter(edm::Event& iEvent, const edm::Even
 
     }
 
-    for(int j = 0; j < int(auxPassCut.size()); ++j){
-      auxPassCut[j] = false;
-    }
+    for(int j = 0; j < int(auxPassCut.size()); ++j) auxPassCut[j] = false;
 
   }
 
@@ -453,10 +454,31 @@ bool plotterSingLepCRNoJetSelSkim<T>::filter(edm::Event& iEvent, const edm::Even
     variables.DeltaPhiJetMETNoMu = deltaPhiMetJetLeadingVsLeptonMetNoMu;
     variables.DeltaPhiJetMETNoMuNoLep = deltaPhiMetJetLeadingVsLeptonMetNoMuMinusOnePt;}
   }
+
+  double sf = 1.0;
+  std::string elecInputFile = "/home/brenoorzari/CMSSW_13_0_13/src/Analysis/Helper/data/electronSFs.root";
+  std::string muonInputFile = "/home/brenoorzari/CMSSW_13_0_13/src/Analysis/Helper/data/muonSFs.root";
+  std::string elecReco = "electronReco2022;1";
+  std::string elecID = "electronID2022Tight;1";
+  std::string muonID = "muonID2022Tight;1";
+  std::string muonIso = "muonIso2022TightTightID;1";
+  std::string muonTrigger = "muonTrigger2022IsoMu24;1";
+
+  sf *= (*generator).weight() / fabs ((*generator).weight ());
+
+  if(std::is_same<T, pat::Electron>::value){
+    sfFunctions::sfElectrons(sf, elecInputFile, elecReco, selElectrons);
+    sfFunctions::sfElectrons(sf, elecInputFile, elecID, selElectrons);
+  }
+  if(std::is_same<T, pat::Muon>::value){
+    sfFunctions::sfMuons(sf, muonInputFile, muonID, selMuons);
+    sfFunctions::sfMuons(sf, muonInputFile, muonIso, selMuons);
+    sfFunctions::sfMuons(sf, muonInputFile, muonTrigger, selMuons);
+  }
     
-  plotPrintFunctions::plotVariables(oneDHists_, twoDHists_, variables, 4);
-  plotPrintFunctions::plotVariables(oneDHists_, twoDHists_, variables, 5);
-  plotPrintFunctions::plotVariables(oneDHists_, twoDHists_, variables, 6);
+  plotPrintFunctions::plotVariables(oneDHists_, twoDHists_, variables, 4, sf);
+  plotPrintFunctions::plotVariables(oneDHists_, twoDHists_, variables, 5, sf);
+  plotPrintFunctions::plotVariables(oneDHists_, twoDHists_, variables, 6, sf);
 
   return isGood;
 }
@@ -473,6 +495,7 @@ void plotterSingLepCRNoJetSelSkim<T>::fillDescriptions(edm::ConfigurationDescrip
   desc.add<edm::InputTag>("jets", edm::InputTag("slimmedJets"));
   desc.add<edm::InputTag>("mets", edm::InputTag("slimmedMETs"));
   desc.add<edm::InputTag>("pfCandidates", edm::InputTag("packedPFCandidates"));
+  desc.add<edm::InputTag>("generator", edm::InputTag("generator"));
   desc.add<edm::InputTag>("triggersPAT", edm::InputTag("TriggerResults","","PAT"));
   desc.add<edm::InputTag>("triggersHLT", edm::InputTag("TriggerResults","","HLT"));
   desc.add<std::string>("HLTName", std::string("placeholderHLT"));

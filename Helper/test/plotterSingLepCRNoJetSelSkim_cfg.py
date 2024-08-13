@@ -35,7 +35,7 @@ process.maxEvents = cms.untracked.PSet (
 )
 
 process.source = cms.Source ("PoolSource",
-    fileNames = cms.untracked.vstring ("file:/home/brenoorzari/CMSSW_13_0_13/src/Analysis/BGEst/test/electron_singLepCRNoJetSelSkim_selected.root"),
+    fileNames = cms.untracked.vstring ("file:/home/brenoorzari/CMSSW_13_0_13/src/Analysis/BGEst/test/" + lepton + "_singLepCRNoJetSelSkim_selected.root"),
 )
 
 process.TFileService = cms.Service ('TFileService',

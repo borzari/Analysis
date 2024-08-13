@@ -10,7 +10,9 @@ This has the BackgroundEstimation, StandardAnalysis and TriggerAnalysis selectio
    - It helps when needing to apply changes to the selection
       - Might find a better way to make explicit changes to the methods if needed
 - Implemented a `plotPrintFunctions` class to use for printing cumulative and individual efficiencies and to use to plot histograms when needed
+   - Implemented distinct nLayers
 - Implemented a `selectingFunctions` to clean up the selection plugins
+- Implemented a `sfFunctions` for scale factors inclusion
 
 ## Done for BackgroundEstimation
 
@@ -35,20 +37,19 @@ This has the BackgroundEstimation, StandardAnalysis and TriggerAnalysis selectio
    - Implemented leptonTagPt35 leptonTagPt35MetTrig selections
       - Compared with 100k events and everything worked fine
 - Implemented crab config file to run BGEst selections
+- Implemented distinct layer signal regions (in plotters)
+- Determined Nctrl, Pveto, Poffline and Ptrigger for all leptons
+   - Using this repo to calculate, developing a calculation script
+   - Estimate BG for all types and compare with data
+- Implemented a way to add leptons SFs to have the correct plots
+- Doesn't need systematic uncertainties in MC
 
 ## Ongoing for BackgroundEstimation
 
-- Determining Nctrl, Pveto, Poffline and Ptrigger for all leptons and nLayers
-   - Using this repo to calculate, developing a calculation script
-   - Estimate BG for all types and compare with data
-- Implementing a way to add leptons SFs to have the correct plots; most probably will rely on passing the .root files with the SFs for the distinct lepton cases
+- Determining bkgdEst with distinct nLayers
 
 ## TODO for BackgroundEstimation
 
-- Charged leptons
-   - Implement distinct layer signal regions
-   - Implement systematic uncertainties
-      - Poffline and Ptrigger uncertainties
 - Fake tracks
    - Implement ZtoEE, ZtoMuMu, ZtoEEDisTrkNoD0Cut and ZtoMuMuDisTrkNoD0Cut selections and compare with original (Important! The electron pt cuts are higher in ElectronTagSkim than for ZtoEE. You must run the ZtoEE skim over the full nTuples, *not* the ElectronTagSkim, to get the right events)
    - Determine Nctrl and Pfake for all layers and ZtoLL (this point might be done using the original analysis repo)
