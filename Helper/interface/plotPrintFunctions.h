@@ -66,6 +66,17 @@
 #include "FWCore/ParameterSet/interface/ParameterSetDescription.h"
 #include "FWCore/PluginManager/interface/ModuleDef.h"
 
+struct nTPPairs {
+
+  int nTPOS;
+  int nTPSS;
+  int nTPOS_veto;
+  int nTPSS_veto;
+  int nTPOS_loose_veto;
+  int nTPSS_loose_veto;
+
+};
+
 struct VariablesToPlot {
 
   std::vector<pat::Electron> electrons;
@@ -77,8 +88,10 @@ struct VariablesToPlot {
   double DeltaPhiJetMET;
   double DeltaPhiJetMETNoMu;
   double DeltaPhiJetMETNoMuNoLep;
+  std::vector<double> caloNewNoPUDRp5CentralCalo;
   TVector2 metNoMu;
   TVector2 metNoMuNoLep;
+  nTPPairs nTP;
 
 };
 
@@ -142,26 +155,32 @@ class plotPrintFunctions {
     std::string eta = objName + "_eta";
     std::string phi = objName + "_phi";
     std::string charge = objName + "_charge";
+    std::string calo = objName + "_caloNewNoPUDRp5CentralCalo";
+    std::string matchedjet = objName + "_matchedJetCaloEnergy";
 
     oneDHists[std::to_string(NLayers) + objName + "_pt"] = dir.make<TH1D>(pt.c_str(), "", 200, 0.0, 1000.0);
-    oneDHists[std::to_string(NLayers) + objName + "_eta"] = dir.make<TH1D>(eta.c_str(), "", 64, 0.0, 3.2);
-    oneDHists[std::to_string(NLayers) + objName + "_phi"] = dir.make<TH1D>(phi.c_str(), "", 64, 0.0, 3.2);
+    oneDHists[std::to_string(NLayers) + objName + "_eta"] = dir.make<TH1D>(eta.c_str(), "", 128, -3.2, 3.2);
+    oneDHists[std::to_string(NLayers) + objName + "_phi"] = dir.make<TH1D>(phi.c_str(), "", 128, -3.2, 3.2);
     oneDHists[std::to_string(NLayers) + objName + "_charge"] = dir.make<TH1D>(charge.c_str(), "", 3, -1.5, 1.5);
+    if(std::is_same<T, pat::IsolatedTrack>::value){
+      oneDHists[std::to_string(NLayers) + objName + "_caloNewNoPUDRp5CentralCalo"] = dir.make<TH1D>(calo.c_str(), "", 200, 0.0, 1000.0);
+      oneDHists[std::to_string(NLayers) + objName + "_matchedJetCaloEnergy"] = dir.make<TH1D>(matchedjet.c_str(), "", 200, 0.0, 1000.0);
+    };
   
   }
 
   static void createCommonHists(edm::Service<TFileService> &fs, std::map<std::string, TH1D *> &oneDHists, std::map<std::string, TH2D *> &twoDHists, TFileDirectory &dir, const int NLayers){
 
     oneDHists[std::to_string(NLayers) + "met_pt"] = dir.make<TH1D>("met_pt", "", 200, 0.0, 1000.0);
-    oneDHists[std::to_string(NLayers) + "met_phi"] = dir.make<TH1D>("met_phi", "", 64, 0.0, 3.2);
+    oneDHists[std::to_string(NLayers) + "met_phi"] = dir.make<TH1D>("met_phi", "", 128, -3.2, 3.2);
     oneDHists[std::to_string(NLayers) + "metNoMu_pt"] = dir.make<TH1D>("metNoMu_pt", "", 200, 0.0, 1000.0);
-    oneDHists[std::to_string(NLayers) + "metNoMu_phi"] = dir.make<TH1D>("metNoMu_phi", "", 64, 0.0, 3.2);
+    oneDHists[std::to_string(NLayers) + "metNoMu_phi"] = dir.make<TH1D>("metNoMu_phi", "", 128, -3.2, 3.2);
     oneDHists[std::to_string(NLayers) + "metNoMuNoLep_pt"] = dir.make<TH1D>("metNoMuNoLep_pt", "", 200, 0.0, 1000.0);
-    oneDHists[std::to_string(NLayers) + "metNoMuNoLep_phi"] = dir.make<TH1D>("metNoMuNoLep_phi", "", 64, 0.0, 3.2);
+    oneDHists[std::to_string(NLayers) + "metNoMuNoLep_phi"] = dir.make<TH1D>("metNoMuNoLep_phi", "", 128, -3.2, 3.2);
 
-    twoDHists[std::to_string(NLayers) + "metNoMuvsDeltaPhiJetMet"] = dir.make<TH2D>("metNoMuvsDeltaPhiJetMet", "", 200, 0.0, 1000.0, 64, 0.0, 3.2);
-    twoDHists[std::to_string(NLayers) + "metNoMuvsDeltaPhiJetMetNoMu"] = dir.make<TH2D>("metNoMuvsDeltaPhiJetMetNoMu", "", 200, 0.0, 1000.0, 64, 0.0, 3.2);
-    twoDHists[std::to_string(NLayers) + "metNoMuvsDeltaPhiJetMetNoMuNoLep"] = dir.make<TH2D>("metNoMuvsDeltaPhiJetMetNoMuNoLep", "", 200, 0.0, 1000.0, 64, 0.0, 3.2);
+    twoDHists[std::to_string(NLayers) + "metNoMuvsDeltaPhiJetMet"] = dir.make<TH2D>("metNoMuvsDeltaPhiJetMet", "", 200, 0.0, 1000.0, 128, -3.2, 3.2);
+    twoDHists[std::to_string(NLayers) + "metNoMuvsDeltaPhiJetMetNoMu"] = dir.make<TH2D>("metNoMuvsDeltaPhiJetMetNoMu", "", 200, 0.0, 1000.0, 128, -3.2, 3.2);
+    twoDHists[std::to_string(NLayers) + "metNoMuvsDeltaPhiJetMetNoMuNoLep"] = dir.make<TH2D>("metNoMuvsDeltaPhiJetMetNoMuNoLep", "", 200, 0.0, 1000.0, 128, -3.2, 3.2);
   
   }
 
@@ -177,20 +196,25 @@ class plotPrintFunctions {
   }
 
   template<class T>
-  static void plotObjs(std::map<std::string, TH1D *> &oneDHists, std::vector<T> const &objs, std::string objName, const int NLayers){
+  static void plotObjs(std::map<std::string, TH1D *> &oneDHists, std::vector<T> const &objs, std::string objName, const int NLayers, const double sf){
 
     for (const auto& obj : objs) {
       
-      oneDHists.at(std::to_string(NLayers) + objName + "_pt")->Fill(obj.pt());
-      oneDHists.at(std::to_string(NLayers) + objName + "_eta")->Fill(fabs(obj.eta()));
-      oneDHists.at(std::to_string(NLayers) + objName + "_phi")->Fill(fabs(obj.phi()));
-      oneDHists.at(std::to_string(NLayers) + objName + "_charge")->Fill(obj.charge());
-  
+      oneDHists.at(std::to_string(NLayers) + objName + "_pt")->Fill(obj.pt(),sf);
+      oneDHists.at(std::to_string(NLayers) + objName + "_eta")->Fill(obj.eta(),sf);
+      oneDHists.at(std::to_string(NLayers) + objName + "_phi")->Fill(obj.phi(),sf);
+      oneDHists.at(std::to_string(NLayers) + objName + "_charge")->Fill(obj.charge(),sf);
+
     }
 
   }
 
-  static void plotVariables(std::map<std::string, TH1D *> oneDHists, std::map<std::string, TH2D *> twoDHists, VariablesToPlot const &objs, const int NLayers){
+  static void plotTrackCaloEnergy(std::map<std::string, TH1D *> &oneDHists, std::vector<pat::IsolatedTrack> const &objs, std::vector<double> const &caloNewNoPUDRp5CentralCalo, std::string objName, const int NLayers, const double sf){
+    for (const auto& obj : objs) oneDHists.at(std::to_string(NLayers) + objName + "_matchedJetCaloEnergy")->Fill((obj.matchedCaloJetEmEnergy() + obj.matchedCaloJetHadEnergy()),sf);
+    for (const auto& obj : caloNewNoPUDRp5CentralCalo) oneDHists.at(std::to_string(NLayers) + objName + "_caloNewNoPUDRp5CentralCalo")->Fill(obj,sf);
+  }
+
+  static void plotVariables(std::map<std::string, TH1D *> oneDHists, std::map<std::string, TH2D *> twoDHists, VariablesToPlot const &objs, const int NLayers, const double sf){
 
     if(NLayers == 4){
       if(objs.tracks.size() > 0) {
@@ -208,26 +232,29 @@ class plotPrintFunctions {
       }
     }
 
-    if(objs.electrons.size() > 0) plotObjs<pat::Electron>(oneDHists,objs.electrons,"electron",NLayers);
-    if(objs.muons.size() > 0) plotObjs<pat::Muon>(oneDHists,objs.muons,"muon",NLayers);
-    if(objs.taus.size() > 0) plotObjs<pat::Tau>(oneDHists,objs.taus,"tau",NLayers);
-    if(objs.tracks.size() > 0) plotObjs<pat::IsolatedTrack>(oneDHists,objs.tracks,"track",NLayers);
-    if(objs.jets.size() > 0) plotObjs<pat::Jet>(oneDHists,objs.jets,"jet",NLayers);
+    if(objs.electrons.size() > 0) plotObjs<pat::Electron>(oneDHists,objs.electrons,"electron",NLayers,sf);
+    if(objs.muons.size() > 0) plotObjs<pat::Muon>(oneDHists,objs.muons,"muon",NLayers,sf);
+    if(objs.taus.size() > 0) plotObjs<pat::Tau>(oneDHists,objs.taus,"tau",NLayers,sf);
+    if(objs.tracks.size() > 0) {
+      plotObjs<pat::IsolatedTrack>(oneDHists,objs.tracks,"track",NLayers,sf);
+      plotTrackCaloEnergy(oneDHists,objs.tracks,objs.caloNewNoPUDRp5CentralCalo,"track",NLayers,sf);
+    }
+    if(objs.jets.size() > 0) plotObjs<pat::Jet>(oneDHists,objs.jets,"jet",NLayers,sf);
 
-    oneDHists.at(std::to_string(NLayers) + "met_pt")->Fill(objs.met.pt());
-    oneDHists.at(std::to_string(NLayers) + "met_phi")->Fill(fabs(objs.met.phi()));
-    oneDHists.at(std::to_string(NLayers) + "metNoMu_pt")->Fill(objs.metNoMu.Mod());
-    oneDHists.at(std::to_string(NLayers) + "metNoMu_phi")->Fill(fabs(objs.metNoMu.Phi()));
-    oneDHists.at(std::to_string(NLayers) + "metNoMuNoLep_pt")->Fill(objs.metNoMuNoLep.Mod());
-    oneDHists.at(std::to_string(NLayers) + "metNoMuNoLep_phi")->Fill(fabs(objs.metNoMuNoLep.Phi()));
+    oneDHists.at(std::to_string(NLayers) + "met_pt")->Fill(objs.met.pt(),sf);
+    oneDHists.at(std::to_string(NLayers) + "met_phi")->Fill(objs.met.phi(),sf);
+    oneDHists.at(std::to_string(NLayers) + "metNoMu_pt")->Fill(objs.metNoMu.Mod(),sf);
+    oneDHists.at(std::to_string(NLayers) + "metNoMu_phi")->Fill(objs.metNoMu.Phi_mpi_pi(objs.metNoMu.Phi()),sf);
+    oneDHists.at(std::to_string(NLayers) + "metNoMuNoLep_pt")->Fill(objs.metNoMuNoLep.Mod(),sf);
+    oneDHists.at(std::to_string(NLayers) + "metNoMuNoLep_phi")->Fill(objs.metNoMuNoLep.Phi_mpi_pi(objs.metNoMuNoLep.Phi()),sf);
 
-    twoDHists.at(std::to_string(NLayers) + "metNoMuvsDeltaPhiJetMet")->Fill(objs.met.pt(),objs.DeltaPhiJetMET);
-    twoDHists.at(std::to_string(NLayers) + "metNoMuvsDeltaPhiJetMetNoMu")->Fill(objs.metNoMu.Mod(),objs.DeltaPhiJetMETNoMu);
-    twoDHists.at(std::to_string(NLayers) + "metNoMuvsDeltaPhiJetMetNoMuNoLep")->Fill(objs.metNoMuNoLep.Mod(),objs.DeltaPhiJetMETNoMuNoLep);
+    twoDHists.at(std::to_string(NLayers) + "metNoMuvsDeltaPhiJetMet")->Fill(objs.met.pt(),objs.DeltaPhiJetMET,sf);
+    twoDHists.at(std::to_string(NLayers) + "metNoMuvsDeltaPhiJetMetNoMu")->Fill(objs.metNoMu.Mod(),objs.DeltaPhiJetMETNoMu,sf);
+    twoDHists.at(std::to_string(NLayers) + "metNoMuvsDeltaPhiJetMetNoMuNoLep")->Fill(objs.metNoMuNoLep.Mod(),objs.DeltaPhiJetMETNoMuNoLep,sf);
 
   }
 
-  static void plotTPPairs(std::map<std::string, TH1D *> oneDHists, std::map<std::string, TH2D *> twoDHists, VariablesToPlot const &objs, const int NLayers){
+  static void plotTPPairs(std::map<std::string, TH1D *> oneDHists, VariablesToPlot const &objs, const int NLayers, const double sf){
 
     if(NLayers == 4){
       if(objs.tracks.size() > 0) {
@@ -245,12 +272,12 @@ class plotPrintFunctions {
       }
     }
 
-    oneDHists.at(std::to_string(NLayers) + "met_pt")->Fill(objs.met.pt());
-    oneDHists.at(std::to_string(NLayers) + "met_phi")->Fill(fabs(objs.met.phi()));
-    oneDHists.at(std::to_string(NLayers) + "metNoMu_pt")->Fill(objs.metNoMu.Mod());
-    oneDHists.at(std::to_string(NLayers) + "metNoMu_phi")->Fill(fabs(objs.metNoMu.Phi()));
-    oneDHists.at(std::to_string(NLayers) + "metNoMuNoLep_pt")->Fill(objs.metNoMuNoLep.Mod());
-    oneDHists.at(std::to_string(NLayers) + "metNoMuNoLep_phi")->Fill(fabs(objs.metNoMuNoLep.Phi()));
+    oneDHists.at(std::to_string(NLayers) + "nTPOS")->Fill(objs.nTP.nTPOS,sf);
+    oneDHists.at(std::to_string(NLayers) + "nTPSS")->Fill(objs.nTP.nTPSS,sf);
+    oneDHists.at(std::to_string(NLayers) + "nTPOS_veto")->Fill(objs.nTP.nTPOS_veto,sf);
+    oneDHists.at(std::to_string(NLayers) + "nTPSS_veto")->Fill(objs.nTP.nTPSS_veto,sf);
+    oneDHists.at(std::to_string(NLayers) + "nTPOSLoose_veto")->Fill(objs.nTP.nTPOS_loose_veto,sf);
+    oneDHists.at(std::to_string(NLayers) + "nTPSSLoose_veto")->Fill(objs.nTP.nTPSS_loose_veto,sf);
 
   }
 
