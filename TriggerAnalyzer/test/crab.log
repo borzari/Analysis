@@ -1,0 +1,276 @@
+DEBUG 2024-06-15 14:00:51.095 UTC: 	 CRAB Client version: v3.240416
+DEBUG 2024-06-15 14:00:51.095 UTC: 	 Running on: Linux lxplus807.cern.ch 4.18.0-513.24.1.el8_9.x86_64 #1 SMP Thu Mar 14 14:20:09 EDT 2024 x86_64 x86_64 x86_64 GNU/Linux - Red Hat Enterprise Linux 8.10 (Ootpa)
+DEBUG 2024-06-15 14:00:51.095 UTC: 	 Executing command: 'checkwrite'
+DEBUG 2024-06-15 14:00:51.095 UTC: 	 Found CRAB cache file /afs/cern.ch/user/b/borzari/.crab3
+DEBUG 2024-06-15 14:00:51.096 UTC: 	 Checking credentials
+DEBUG 2024-06-15 14:00:51.096 UTC: 	 Found proxy file /tmp/x509up_u114942
+DEBUG 2024-06-15 14:00:51.096 UTC: 	 Making sure it has proper VOMS extension
+DEBUG 2024-06-15 14:00:51.096 UTC: 	 Executing command :
+ voms-proxy-info --vo --file /tmp/x509up_u114942
+DEBUG 2024-06-15 14:00:51.455 UTC: 	 output : cms
+
+ error: 
+ retcode : 0
+DEBUG 2024-06-15 14:00:51.456 UTC: 	 Getting proxy life time left
+DEBUG 2024-06-15 14:00:51.456 UTC: 	 Executing command :
+ voms-proxy-info --actimeleft --timeleft --file /tmp/x509up_u114942
+DEBUG 2024-06-15 14:00:51.832 UTC: 	 output : 690064
+690064
+
+ error: 
+ retcode : 0
+DEBUG 2024-06-15 14:00:51.832 UTC: 	 Proxy valid for 191:41:04 hours
+DEBUG 2024-06-15 14:00:51.832 UTC: 	 Retrieving username ...
+DEBUG 2024-06-15 14:00:51.832 UTC: 	 Retrieving username from CRIC...
+DEBUG 2024-06-15 14:00:52.472 UTC: 	 username is borzari
+INFO 2024-06-15 14:00:53.032 UTC: 	 Rucio client intialized for account borzari
+DEBUG 2024-06-15 14:00:53.032 UTC: 	 Command use: checkwrite
+DEBUG 2024-06-15 14:00:53.032 UTC: 	 Options use: ['--site=T2_BR_SPRACE']
+DEBUG 2024-06-15 14:00:53.032 UTC: 	 Instance is None
+DEBUG 2024-06-15 14:00:53.032 UTC: 	 Server base url is None
+DEBUG 2024-06-15 14:00:53.032 UTC: 	 Retrieving username ...
+DEBUG 2024-06-15 14:00:53.032 UTC: 	 Retrieving username from CRIC...
+DEBUG 2024-06-15 14:00:53.665 UTC: 	 username is borzari
+INFO 2024-06-15 14:00:53.665 UTC: 	 Will check write permission in the default location /store/user/<username>
+INFO 2024-06-15 14:00:53.665 UTC: 	 Validating LFN /store/user/borzari...
+INFO 2024-06-15 14:00:53.665 UTC: 	 LFN /store/user/borzari is valid.
+INFO 2024-06-15 14:00:53.673 UTC: 	 Will use `gfal-copy`, `gfal-rm` commands for checking write permissions
+INFO 2024-06-15 14:00:53.673 UTC: 	 Will check write permission in /store/user/borzari on site T2_BR_SPRACE
+INFO 2024-06-15 14:00:53.695 UTC: 	 Will use PFN: davs://osg-se.sprace.org.br:1094/store/user/borzari/crab3checkwrite_20240615_160053_99a0e45f-c4f1-4e7d-906a-2cd682cb82d6/99a0e45f-c4f1-4e7d-906a-2cd682cb82d6.tmp
+INFO 2024-06-15 14:00:53.695 UTC: 	 
+Attempting to create (dummy) directory crab3checkwrite_20240615_160053_99a0e45f-c4f1-4e7d-906a-2cd682cb82d6 and copy (dummy) file 99a0e45f-c4f1-4e7d-906a-2cd682cb82d6.tmp to /store/user/borzari
+
+INFO 2024-06-15 14:00:53.698 UTC: 	 Executing command: which scram >/dev/null 2>&1 && eval `scram unsetenv -sh`; gfal-copy -p -v -t 180 file:///afs/cern.ch/work/b/borzari/CMSSW_13_0_13_trigger/src/TriggerSignalAnalysis/triggerSignalAnalyzer/test/99a0e45f-c4f1-4e7d-906a-2cd682cb82d6.tmp 'davs://osg-se.sprace.org.br:1094/store/user/borzari/crab3checkwrite_20240615_160053_99a0e45f-c4f1-4e7d-906a-2cd682cb82d6/99a0e45f-c4f1-4e7d-906a-2cd682cb82d6.tmp'
+INFO 2024-06-15 14:00:53.698 UTC: 	 Please wait...
+INFO 2024-06-15 14:04:24.315 UTC: 	 Failed running copy command
+INFO 2024-06-15 14:04:24.315 UTC: 	   Stdout:
+    WARNING (SEToken) Could not retrieve any token for davs://osg-se.sprace.org.br:1094/store/user/borzari/crab3checkwrite_20240615_160053_99a0e45f-c4f1-4e7d-906a-2cd682cb82d6/99a0e45f-c4f1-4e7d-906a-2cd682cb82d6.tmp
+    
+INFO 2024-06-15 14:04:24.315 UTC: 	   Stderr:
+    Command timed out after 180 seconds!
+    
+INFO 2024-06-15 14:04:24.318 UTC: 	 
+Checkwrite Result:
+INFO 2024-06-15 14:04:24.318 UTC: 	 Unable to check write permission in /store/user/borzari on site T2_BR_SPRACE
+Please try again later or contact the site administrators sending them the 'crab checkwrite' output as printed above.
+INFO 2024-06-15 14:04:24.318 UTC: 	 Note: You cannot write to a site if you did not ask permission.
+ERROR 2024-06-15 14:04:24.318 UTC: 	 Command checkwrite failed
+ERROR 2024-06-15 14:04:24.318 UTC: 	 Caught ClientException exception
+Traceback (most recent call last):
+  File "/cvmfs/cms.cern.ch/share/cms/crab-prod/v3.240416.00/bin/crab.py", line 152, in <module>
+    client()
+  File "/cvmfs/cms.cern.ch/share/cms/crab-prod/v3.240416.00/bin/crab.py", line 139, in __call__
+    raise CommandFailedException("Command %s failed" % str(args[0]))
+CRABClient.ClientExceptions.CommandFailedException: Command checkwrite failed
+DEBUG 2024-06-15 16:33:30.429 UTC: 	 CRAB Client version: v3.240416
+DEBUG 2024-06-15 16:33:30.430 UTC: 	 Running on: Linux lxplus807.cern.ch 4.18.0-513.24.1.el8_9.x86_64 #1 SMP Thu Mar 14 14:20:09 EDT 2024 x86_64 x86_64 x86_64 GNU/Linux - Red Hat Enterprise Linux 8.10 (Ootpa)
+DEBUG 2024-06-15 16:33:30.430 UTC: 	 Executing command: 'checkwrite'
+DEBUG 2024-06-15 16:33:30.430 UTC: 	 Found CRAB cache file /afs/cern.ch/user/b/borzari/.crab3
+DEBUG 2024-06-15 16:33:30.430 UTC: 	 Checking credentials
+DEBUG 2024-06-15 16:33:30.430 UTC: 	 Found proxy file /tmp/x509up_u114942
+DEBUG 2024-06-15 16:33:30.430 UTC: 	 Making sure it has proper VOMS extension
+DEBUG 2024-06-15 16:33:30.430 UTC: 	 Executing command :
+ voms-proxy-info --vo --file /tmp/x509up_u114942
+DEBUG 2024-06-15 16:33:30.800 UTC: 	 output : cms
+
+ error: 
+ retcode : 0
+DEBUG 2024-06-15 16:33:30.800 UTC: 	 Getting proxy life time left
+DEBUG 2024-06-15 16:33:30.800 UTC: 	 Executing command :
+ voms-proxy-info --actimeleft --timeleft --file /tmp/x509up_u114942
+DEBUG 2024-06-15 16:33:31.165 UTC: 	 output : 680904
+680904
+
+ error: 
+ retcode : 0
+DEBUG 2024-06-15 16:33:31.165 UTC: 	 Proxy valid for 189:08:24 hours
+DEBUG 2024-06-15 16:33:31.165 UTC: 	 Retrieving username ...
+DEBUG 2024-06-15 16:33:31.165 UTC: 	 Retrieving username from CRIC...
+DEBUG 2024-06-15 16:33:32.214 UTC: 	 username is borzari
+INFO 2024-06-15 16:33:32.711 UTC: 	 Rucio client intialized for account borzari
+DEBUG 2024-06-15 16:33:32.711 UTC: 	 Command use: checkwrite
+DEBUG 2024-06-15 16:33:32.711 UTC: 	 Options use: ['--site=T2_BR_SPRACE']
+DEBUG 2024-06-15 16:33:32.711 UTC: 	 Instance is None
+DEBUG 2024-06-15 16:33:32.711 UTC: 	 Server base url is None
+DEBUG 2024-06-15 16:33:32.711 UTC: 	 Retrieving username ...
+DEBUG 2024-06-15 16:33:32.711 UTC: 	 Retrieving username from CRIC...
+DEBUG 2024-06-15 16:33:34.063 UTC: 	 username is borzari
+INFO 2024-06-15 16:33:34.063 UTC: 	 Will check write permission in the default location /store/user/<username>
+INFO 2024-06-15 16:33:34.063 UTC: 	 Validating LFN /store/user/borzari...
+INFO 2024-06-15 16:33:34.063 UTC: 	 LFN /store/user/borzari is valid.
+INFO 2024-06-15 16:33:34.070 UTC: 	 Will use `gfal-copy`, `gfal-rm` commands for checking write permissions
+INFO 2024-06-15 16:33:34.070 UTC: 	 Will check write permission in /store/user/borzari on site T2_BR_SPRACE
+INFO 2024-06-15 16:33:34.092 UTC: 	 Will use PFN: davs://osg-se.sprace.org.br:1094/store/user/borzari/crab3checkwrite_20240615_183334_bb9fecfd-0f6a-40c7-88bc-7f7529ae52c1/bb9fecfd-0f6a-40c7-88bc-7f7529ae52c1.tmp
+INFO 2024-06-15 16:33:34.092 UTC: 	 
+Attempting to create (dummy) directory crab3checkwrite_20240615_183334_bb9fecfd-0f6a-40c7-88bc-7f7529ae52c1 and copy (dummy) file bb9fecfd-0f6a-40c7-88bc-7f7529ae52c1.tmp to /store/user/borzari
+
+INFO 2024-06-15 16:33:34.095 UTC: 	 Executing command: which scram >/dev/null 2>&1 && eval `scram unsetenv -sh`; gfal-copy -p -v -t 180 file:///afs/cern.ch/work/b/borzari/CMSSW_13_0_13_trigger/src/TriggerSignalAnalysis/triggerSignalAnalyzer/test/bb9fecfd-0f6a-40c7-88bc-7f7529ae52c1.tmp 'davs://osg-se.sprace.org.br:1094/store/user/borzari/crab3checkwrite_20240615_183334_bb9fecfd-0f6a-40c7-88bc-7f7529ae52c1/bb9fecfd-0f6a-40c7-88bc-7f7529ae52c1.tmp'
+INFO 2024-06-15 16:33:34.095 UTC: 	 Please wait...
+INFO 2024-06-15 16:37:04.699 UTC: 	 Failed running copy command
+INFO 2024-06-15 16:37:04.699 UTC: 	   Stdout:
+    WARNING (SEToken) Could not retrieve any token for davs://osg-se.sprace.org.br:1094/store/user/borzari/crab3checkwrite_20240615_183334_bb9fecfd-0f6a-40c7-88bc-7f7529ae52c1/bb9fecfd-0f6a-40c7-88bc-7f7529ae52c1.tmp
+    Copying 85 bytes file:///afs/cern.ch/work/b/borzari/CMSSW_13_0_13_trigger/src/TriggerSignalAnalysis/triggerSignalAnalyzer/test/bb9fecfd-0f6a-40c7-88bc-7f7529ae52c1.tmp => davs://osg-se.sprace.org.br:1094/store/user/borzari/crab3checkwrite_20240615_183334_bb9fecfd-0f6a-40c7-88bc-7f7529ae52c1/bb9fecfd-0f6a-40c7-88bc-7f7529ae52c1.tmp
+    event: [1718469410445] BOTH   GFAL2:CORE:COPY	LIST:ENTER	
+    event: [1718469410445] BOTH   GFAL2:CORE:COPY	LIST:ITEM	file:///afs/cern.ch/work/b/borzari/CMSSW_13_0_13_trigger/src/TriggerSignalAnalysis/triggerSignalAnalyzer/test/bb9fecfd-0f6a-40c7-88bc-7f7529ae52c1.tmp => davs://osg-se.sprace.org.br:1094/store/user/borzari/crab3checkwrite_20240615_183334_bb9fecfd-0f6a-40c7-88bc-7f7529ae52c1/bb9fecfd-0f6a-40c7-88bc-7f7529ae52c1.tmp
+    event: [1718469410445] BOTH   GFAL2:CORE:COPY	LIST:EXIT	
+    event: [1718469410445] BOTH   http_plugin	PREPARE:ENTER	file:///afs/cern.ch/work/b/borzari/CMSSW_13_0_13_trigger/src/TriggerSignalAnalysis/triggerSignalAnalyzer/test/bb9fecfd-0f6a-40c7-88bc-7f7529ae52c1.tmp => davs://osg-se.sprace.org.br:1094/store/user/borzari/crab3checkwrite_20240615_183334_bb9fecfd-0f6a-40c7-88bc-7f7529ae52c1/bb9fecfd-0f6a-40c7-88bc-7f7529ae52c1.tmp
+    
+INFO 2024-06-15 16:37:04.699 UTC: 	   Stderr:
+    Command timed out after 180 seconds!
+    
+INFO 2024-06-15 16:37:05.838 UTC: 	 
+Checkwrite Result:
+INFO 2024-06-15 16:37:05.838 UTC: 	 Unable to check write permission in /store/user/borzari on site T2_BR_SPRACE
+Please try again later or contact the site administrators sending them the 'crab checkwrite' output as printed above.
+INFO 2024-06-15 16:37:05.838 UTC: 	 Note: You cannot write to a site if you did not ask permission.
+ERROR 2024-06-15 16:37:05.838 UTC: 	 Command checkwrite failed
+ERROR 2024-06-15 16:37:05.838 UTC: 	 Caught ClientException exception
+Traceback (most recent call last):
+  File "/cvmfs/cms.cern.ch/share/cms/crab-prod/v3.240416.00/bin/crab.py", line 152, in <module>
+    client()
+  File "/cvmfs/cms.cern.ch/share/cms/crab-prod/v3.240416.00/bin/crab.py", line 139, in __call__
+    raise CommandFailedException("Command %s failed" % str(args[0]))
+CRABClient.ClientExceptions.CommandFailedException: Command checkwrite failed
+DEBUG 2024-06-15 17:16:19.262 UTC: 	 CRAB Client version: v3.240416
+DEBUG 2024-06-15 17:16:19.262 UTC: 	 Running on: Linux lxplus807.cern.ch 4.18.0-513.24.1.el8_9.x86_64 #1 SMP Thu Mar 14 14:20:09 EDT 2024 x86_64 x86_64 x86_64 GNU/Linux - Red Hat Enterprise Linux 8.10 (Ootpa)
+DEBUG 2024-06-15 17:16:19.262 UTC: 	 Executing command: 'checkwrite'
+DEBUG 2024-06-15 17:16:19.262 UTC: 	 Found CRAB cache file /afs/cern.ch/user/b/borzari/.crab3
+DEBUG 2024-06-15 17:16:19.263 UTC: 	 Checking credentials
+DEBUG 2024-06-15 17:16:19.263 UTC: 	 Found proxy file /tmp/x509up_u114942
+DEBUG 2024-06-15 17:16:19.263 UTC: 	 Making sure it has proper VOMS extension
+DEBUG 2024-06-15 17:16:19.263 UTC: 	 Executing command :
+ voms-proxy-info --vo --file /tmp/x509up_u114942
+DEBUG 2024-06-15 17:16:19.638 UTC: 	 output : cms
+
+ error: 
+ retcode : 0
+DEBUG 2024-06-15 17:16:19.638 UTC: 	 Getting proxy life time left
+DEBUG 2024-06-15 17:16:19.638 UTC: 	 Executing command :
+ voms-proxy-info --actimeleft --timeleft --file /tmp/x509up_u114942
+DEBUG 2024-06-15 17:16:20.014 UTC: 	 output : 678335
+678335
+
+ error: 
+ retcode : 0
+DEBUG 2024-06-15 17:16:20.014 UTC: 	 Proxy valid for 188:25:35 hours
+DEBUG 2024-06-15 17:16:20.014 UTC: 	 Retrieving username ...
+DEBUG 2024-06-15 17:16:20.014 UTC: 	 Retrieving username from CRIC...
+DEBUG 2024-06-15 17:16:20.718 UTC: 	 username is borzari
+INFO 2024-06-15 17:16:21.251 UTC: 	 Rucio client intialized for account borzari
+DEBUG 2024-06-15 17:16:21.252 UTC: 	 Command use: checkwrite
+DEBUG 2024-06-15 17:16:21.252 UTC: 	 Options use: ['--site=T2_BR_SPRACE']
+DEBUG 2024-06-15 17:16:21.252 UTC: 	 Instance is None
+DEBUG 2024-06-15 17:16:21.252 UTC: 	 Server base url is None
+DEBUG 2024-06-15 17:16:21.252 UTC: 	 Retrieving username ...
+DEBUG 2024-06-15 17:16:21.252 UTC: 	 Retrieving username from CRIC...
+DEBUG 2024-06-15 17:16:21.849 UTC: 	 username is borzari
+INFO 2024-06-15 17:16:21.850 UTC: 	 Will check write permission in the default location /store/user/<username>
+INFO 2024-06-15 17:16:21.850 UTC: 	 Validating LFN /store/user/borzari...
+INFO 2024-06-15 17:16:21.850 UTC: 	 LFN /store/user/borzari is valid.
+INFO 2024-06-15 17:16:21.858 UTC: 	 Will use `gfal-copy`, `gfal-rm` commands for checking write permissions
+INFO 2024-06-15 17:16:21.858 UTC: 	 Will check write permission in /store/user/borzari on site T2_BR_SPRACE
+INFO 2024-06-15 17:16:22.238 UTC: 	 Will use PFN: davs://osg-se.sprace.org.br:1094/store/user/borzari/crab3checkwrite_20240615_191621_15640dec-7e8c-4d7f-8664-7a45f32d6787/15640dec-7e8c-4d7f-8664-7a45f32d6787.tmp
+INFO 2024-06-15 17:16:22.238 UTC: 	 
+Attempting to create (dummy) directory crab3checkwrite_20240615_191621_15640dec-7e8c-4d7f-8664-7a45f32d6787 and copy (dummy) file 15640dec-7e8c-4d7f-8664-7a45f32d6787.tmp to /store/user/borzari
+
+INFO 2024-06-15 17:16:22.241 UTC: 	 Executing command: which scram >/dev/null 2>&1 && eval `scram unsetenv -sh`; gfal-copy -p -v -t 180 file:///afs/cern.ch/work/b/borzari/CMSSW_13_0_13_trigger/src/TriggerSignalAnalysis/triggerSignalAnalyzer/test/15640dec-7e8c-4d7f-8664-7a45f32d6787.tmp 'davs://osg-se.sprace.org.br:1094/store/user/borzari/crab3checkwrite_20240615_191621_15640dec-7e8c-4d7f-8664-7a45f32d6787/15640dec-7e8c-4d7f-8664-7a45f32d6787.tmp'
+INFO 2024-06-15 17:16:22.241 UTC: 	 Please wait...
+INFO 2024-06-15 17:16:33.005 UTC: 	 
+Successfully created directory crab3checkwrite_20240615_191621_15640dec-7e8c-4d7f-8664-7a45f32d6787 and copied file 15640dec-7e8c-4d7f-8664-7a45f32d6787.tmp to /store/user/borzari
+INFO 2024-06-15 17:16:33.005 UTC: 	 
+Attempting to delete file davs://osg-se.sprace.org.br:1094/store/user/borzari/crab3checkwrite_20240615_191621_15640dec-7e8c-4d7f-8664-7a45f32d6787/15640dec-7e8c-4d7f-8664-7a45f32d6787.tmp
+
+INFO 2024-06-15 17:16:33.005 UTC: 	 Executing command: which scram >/dev/null 2>&1 && eval `scram unsetenv -sh`; gfal-rm -v -t 180 'davs://osg-se.sprace.org.br:1094/store/user/borzari/crab3checkwrite_20240615_191621_15640dec-7e8c-4d7f-8664-7a45f32d6787/15640dec-7e8c-4d7f-8664-7a45f32d6787.tmp'
+INFO 2024-06-15 17:16:33.005 UTC: 	 Please wait...
+INFO 2024-06-15 17:16:37.731 UTC: 	 
+Successfully deleted file davs://osg-se.sprace.org.br:1094/store/user/borzari/crab3checkwrite_20240615_191621_15640dec-7e8c-4d7f-8664-7a45f32d6787/15640dec-7e8c-4d7f-8664-7a45f32d6787.tmp
+INFO 2024-06-15 17:16:37.732 UTC: 	 
+Attempting to delete directory davs://osg-se.sprace.org.br:1094/store/user/borzari/crab3checkwrite_20240615_191621_15640dec-7e8c-4d7f-8664-7a45f32d6787/
+
+INFO 2024-06-15 17:16:37.732 UTC: 	 Executing command: which scram >/dev/null 2>&1 && eval `scram unsetenv -sh`; gfal-rm -r -v -t 180 'davs://osg-se.sprace.org.br:1094/store/user/borzari/crab3checkwrite_20240615_191621_15640dec-7e8c-4d7f-8664-7a45f32d6787/'
+INFO 2024-06-15 17:16:37.732 UTC: 	 Please wait...
+INFO 2024-06-15 17:16:43.359 UTC: 	 
+Successfully deleted directory davs://osg-se.sprace.org.br:1094/store/user/borzari/crab3checkwrite_20240615_191621_15640dec-7e8c-4d7f-8664-7a45f32d6787/
+INFO 2024-06-15 17:16:43.401 UTC: 	 
+Checkwrite Result:
+INFO 2024-06-15 17:16:43.401 UTC: 	 Success: Able to write in /store/user/borzari on site T2_BR_SPRACE
+DEBUG 2024-06-17 01:46:09.208 UTC: 	 CRAB Client version: v3.240416
+DEBUG 2024-06-17 01:46:09.209 UTC: 	 Running on: Linux lxplus807.cern.ch 4.18.0-513.24.1.el8_9.x86_64 #1 SMP Thu Mar 14 14:20:09 EDT 2024 x86_64 x86_64 x86_64 GNU/Linux - Red Hat Enterprise Linux 8.10 (Ootpa)
+DEBUG 2024-06-17 01:46:09.209 UTC: 	 Executing command: 'status'
+DEBUG 2024-06-17 01:46:09.210 UTC: 	 Found CRAB cache file /afs/cern.ch/user/b/borzari/.crab3
+DEBUG 2024-07-14 01:38:48.577 UTC: 	 CRAB Client version: v3.240621
+DEBUG 2024-07-14 01:38:48.577 UTC: 	 Running on: Linux lxplus801.cern.ch 4.18.0-553.5.1.el8_10.x86_64 #1 SMP Tue May 21 03:13:04 EDT 2024 x86_64 x86_64 x86_64 GNU/Linux - Red Hat Enterprise Linux 8.10 (Ootpa)
+DEBUG 2024-07-14 01:38:48.577 UTC: 	 Executing command: 'status'
+DEBUG 2024-07-14 01:38:48.577 UTC: 	 Found CRAB cache file /afs/cern.ch/user/b/borzari/.crab3
+ERROR 2024-07-14 01:38:48.578 UTC: 	 Error: crab/crab_right_Muon_MET105IsoTrk50Sig_2022C is not a valid CRAB project directory.
+ERROR 2024-07-14 01:38:48.578 UTC: 	 Caught ClientException exception
+Traceback (most recent call last):
+  File "/cvmfs/cms.cern.ch/share/cms/crab-prod/v3.240621.01/bin/crab.py", line 152, in <module>
+    client()
+  File "/cvmfs/cms.cern.ch/share/cms/crab-prod/v3.240621.01/bin/crab.py", line 135, in __call__
+    self.cmd = sub_cmd(self.logger, args[1:])
+  File "/cvmfs/cms.cern.ch/share/cms/crab-prod/v3.240621.01/lib/CRABClient/Commands/status.py", line 48, in __init__
+    SubCommand.__init__(self, logger, cmdargs)
+  File "/cvmfs/cms.cern.ch/share/cms/crab-prod/v3.240621.01/lib/CRABClient/Commands/SubCommand.py", line 280, in __init__
+    SubCommand.validateOptions(self)
+  File "/cvmfs/cms.cern.ch/share/cms/crab-prod/v3.240621.01/lib/CRABClient/Commands/SubCommand.py", line 680, in validateOptions
+    raise ConfigurationException(msg)
+CRABClient.ClientExceptions.ConfigurationException: Error: crab/crab_right_Muon_MET105IsoTrk50Sig_2022C is not a valid CRAB project directory.
+INFO 2024-07-14 01:38:48.593 UTC: 	 Log file is /afs/cern.ch/work/b/borzari/CMSSW_13_0_13_trigger/src/TriggerSignalAnalysis/triggerSignalAnalyzer/test/crab.log
+DEBUG 2024-07-14 01:38:50.261 UTC: 	 CRAB Client version: v3.240621
+DEBUG 2024-07-14 01:38:50.262 UTC: 	 Running on: Linux lxplus801.cern.ch 4.18.0-553.5.1.el8_10.x86_64 #1 SMP Tue May 21 03:13:04 EDT 2024 x86_64 x86_64 x86_64 GNU/Linux - Red Hat Enterprise Linux 8.10 (Ootpa)
+DEBUG 2024-07-14 01:38:50.262 UTC: 	 Executing command: 'status'
+DEBUG 2024-07-14 01:38:50.262 UTC: 	 Found CRAB cache file /afs/cern.ch/user/b/borzari/.crab3
+ERROR 2024-07-14 01:38:50.263 UTC: 	 Error: crab/crab_right_Muon_MET105IsoTrk50Sig_2022D is not a valid CRAB project directory.
+ERROR 2024-07-14 01:38:50.263 UTC: 	 Caught ClientException exception
+Traceback (most recent call last):
+  File "/cvmfs/cms.cern.ch/share/cms/crab-prod/v3.240621.01/bin/crab.py", line 152, in <module>
+    client()
+  File "/cvmfs/cms.cern.ch/share/cms/crab-prod/v3.240621.01/bin/crab.py", line 135, in __call__
+    self.cmd = sub_cmd(self.logger, args[1:])
+  File "/cvmfs/cms.cern.ch/share/cms/crab-prod/v3.240621.01/lib/CRABClient/Commands/status.py", line 48, in __init__
+    SubCommand.__init__(self, logger, cmdargs)
+  File "/cvmfs/cms.cern.ch/share/cms/crab-prod/v3.240621.01/lib/CRABClient/Commands/SubCommand.py", line 280, in __init__
+    SubCommand.validateOptions(self)
+  File "/cvmfs/cms.cern.ch/share/cms/crab-prod/v3.240621.01/lib/CRABClient/Commands/SubCommand.py", line 680, in validateOptions
+    raise ConfigurationException(msg)
+CRABClient.ClientExceptions.ConfigurationException: Error: crab/crab_right_Muon_MET105IsoTrk50Sig_2022D is not a valid CRAB project directory.
+INFO 2024-07-14 01:38:50.264 UTC: 	 Log file is /afs/cern.ch/work/b/borzari/CMSSW_13_0_13_trigger/src/TriggerSignalAnalysis/triggerSignalAnalyzer/test/crab.log
+DEBUG 2024-07-14 01:39:24.106 UTC: 	 CRAB Client version: v3.240621
+DEBUG 2024-07-14 01:39:24.107 UTC: 	 Running on: Linux lxplus801.cern.ch 4.18.0-553.5.1.el8_10.x86_64 #1 SMP Tue May 21 03:13:04 EDT 2024 x86_64 x86_64 x86_64 GNU/Linux - Red Hat Enterprise Linux 8.10 (Ootpa)
+DEBUG 2024-07-14 01:39:24.107 UTC: 	 Executing command: 'status'
+DEBUG 2024-07-14 01:39:24.107 UTC: 	 Found CRAB cache file /afs/cern.ch/user/b/borzari/.crab3
+ERROR 2024-07-14 01:39:24.107 UTC: 	 Error: crab/crab_right_WToLNu_MET105IsoTrk50Sig_2022 is not a valid CRAB project directory.
+ERROR 2024-07-14 01:39:24.107 UTC: 	 Caught ClientException exception
+Traceback (most recent call last):
+  File "/cvmfs/cms.cern.ch/share/cms/crab-prod/v3.240621.01/bin/crab.py", line 152, in <module>
+    client()
+  File "/cvmfs/cms.cern.ch/share/cms/crab-prod/v3.240621.01/bin/crab.py", line 135, in __call__
+    self.cmd = sub_cmd(self.logger, args[1:])
+  File "/cvmfs/cms.cern.ch/share/cms/crab-prod/v3.240621.01/lib/CRABClient/Commands/status.py", line 48, in __init__
+    SubCommand.__init__(self, logger, cmdargs)
+  File "/cvmfs/cms.cern.ch/share/cms/crab-prod/v3.240621.01/lib/CRABClient/Commands/SubCommand.py", line 280, in __init__
+    SubCommand.validateOptions(self)
+  File "/cvmfs/cms.cern.ch/share/cms/crab-prod/v3.240621.01/lib/CRABClient/Commands/SubCommand.py", line 680, in validateOptions
+    raise ConfigurationException(msg)
+CRABClient.ClientExceptions.ConfigurationException: Error: crab/crab_right_WToLNu_MET105IsoTrk50Sig_2022 is not a valid CRAB project directory.
+INFO 2024-07-14 01:39:24.109 UTC: 	 Log file is /afs/cern.ch/work/b/borzari/CMSSW_13_0_13_trigger/src/TriggerSignalAnalysis/triggerSignalAnalyzer/test/crab.log
+DEBUG 2024-07-14 01:39:25.570 UTC: 	 CRAB Client version: v3.240621
+DEBUG 2024-07-14 01:39:25.570 UTC: 	 Running on: Linux lxplus801.cern.ch 4.18.0-553.5.1.el8_10.x86_64 #1 SMP Tue May 21 03:13:04 EDT 2024 x86_64 x86_64 x86_64 GNU/Linux - Red Hat Enterprise Linux 8.10 (Ootpa)
+DEBUG 2024-07-14 01:39:25.570 UTC: 	 Executing command: 'status'
+DEBUG 2024-07-14 01:39:25.570 UTC: 	 Found CRAB cache file /afs/cern.ch/user/b/borzari/.crab3
+ERROR 2024-07-14 01:39:25.571 UTC: 	 Error: crab/crab_right_WToLNu_MET105IsoTrk50Sig_2022ext is not a valid CRAB project directory.
+ERROR 2024-07-14 01:39:25.571 UTC: 	 Caught ClientException exception
+Traceback (most recent call last):
+  File "/cvmfs/cms.cern.ch/share/cms/crab-prod/v3.240621.01/bin/crab.py", line 152, in <module>
+    client()
+  File "/cvmfs/cms.cern.ch/share/cms/crab-prod/v3.240621.01/bin/crab.py", line 135, in __call__
+    self.cmd = sub_cmd(self.logger, args[1:])
+  File "/cvmfs/cms.cern.ch/share/cms/crab-prod/v3.240621.01/lib/CRABClient/Commands/status.py", line 48, in __init__
+    SubCommand.__init__(self, logger, cmdargs)
+  File "/cvmfs/cms.cern.ch/share/cms/crab-prod/v3.240621.01/lib/CRABClient/Commands/SubCommand.py", line 280, in __init__
+    SubCommand.validateOptions(self)
+  File "/cvmfs/cms.cern.ch/share/cms/crab-prod/v3.240621.01/lib/CRABClient/Commands/SubCommand.py", line 680, in validateOptions
+    raise ConfigurationException(msg)
+CRABClient.ClientExceptions.ConfigurationException: Error: crab/crab_right_WToLNu_MET105IsoTrk50Sig_2022ext is not a valid CRAB project directory.
+INFO 2024-07-14 01:39:25.572 UTC: 	 Log file is /afs/cern.ch/work/b/borzari/CMSSW_13_0_13_trigger/src/TriggerSignalAnalysis/triggerSignalAnalyzer/test/crab.log
