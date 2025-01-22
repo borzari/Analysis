@@ -19,6 +19,10 @@ dataset = "Muon"
 datayear = "2023"
 dataera = "C0"
 
+# dataset = "Muon"
+# datayear = "2024"
+# dataera = "I1"
+
 # dataset = "WToLNu"
 # datayear = "2023"
 # dataera = "BPix"
@@ -74,7 +78,8 @@ process.triggerDataBGAnalyzer = cms.EDAnalyzer ("triggerDataBGAnalyzer",
     mets = cms.InputTag("slimmedMETs"),
     muons = cms.InputTag("slimmedMuons",""),
     jets = cms.InputTag("slimmedJets",""),
-    triggersPAT = cms.InputTag('TriggerResults','','PAT'),
+    triggersPAT = cms.InputTag('TriggerResults','','PAT'), # This has to be PAT for re-reco
+    # triggersPAT = cms.InputTag('TriggerResults','','RECO'), # This has to be RECO for prompt
     triggersHLT = cms.InputTag('TriggerResults','','HLT'),
     trigobjs = cms.InputTag('slimmedPatTrigger'),
     pfcands = cms.InputTag('packedPFCandidates'),

@@ -6,12 +6,14 @@ config = config()
 
 dataera = "D1v1"
 # dataera = "BPix"
+# dataera = "I1"
 
 config.General.requestName = ''
 config.General.workArea = 'crab'
 config.General.transferOutputs = True
 config.General.transferLogs = True
 config.General.requestName = 'allMuonPt_Muon_MET105IsoTrk50Sig_2023' + dataera
+# config.General.requestName = 'Muon_MET105IsoTrk50Sig_2024' + dataera
 # config.General.requestName = 'allMuonPt_WToLNu_MET105IsoTrk50Sig_2023' + dataera
 
 config.JobType.pluginName = 'Analysis'
@@ -37,6 +39,18 @@ config.JobType.allowUndistributedCMSSW = True
 # config.Data.inputDataset = '/Muon0/Run2023D-22Sep2023_v2-v1/MINIAOD'
 config.Data.inputDataset = '/Muon1/Run2023D-22Sep2023_v1-v1/MINIAOD' #####
 # config.Data.inputDataset = '/Muon1/Run2023D-22Sep2023_v2-v1/MINIAOD'
+# config.Data.inputDataset = '/Muon0/Run2024D-PromptReco-v1/MINIAOD'
+# config.Data.inputDataset = '/Muon1/Run2024D-PromptReco-v1/MINIAOD'
+# config.Data.inputDataset = '/Muon0/Run2024E-PromptReco-v2/MINIAOD'
+# config.Data.inputDataset = '/Muon1/Run2024E-PromptReco-v2/MINIAOD'
+# config.Data.inputDataset = '/Muon0/Run2024F-PromptReco-v1/MINIAOD'
+# config.Data.inputDataset = '/Muon1/Run2024F-PromptReco-v1/MINIAOD'
+# config.Data.inputDataset = '/Muon0/Run2024G-PromptReco-v1/MINIAOD'
+# config.Data.inputDataset = '/Muon1/Run2024G-PromptReco-v1/MINIAOD'
+# config.Data.inputDataset = '/Muon0/Run2024H-PromptReco-v1/MINIAOD'
+# config.Data.inputDataset = '/Muon1/Run2024H-PromptReco-v1/MINIAOD'
+# config.Data.inputDataset = '/Muon0/Run2024I-PromptReco-v1/MINIAOD'
+# config.Data.inputDataset = '/Muon1/Run2024I-PromptReco-v1/MINIAOD'
 # config.Data.inputDataset = '/WtoLNu-4Jets_TuneCP5_13p6TeV_madgraphMLM-pythia8/Run3Summer22MiniAODv4-130X_mcRun3_2022_realistic_v5-v2/MINIAODSIM'
 # config.Data.inputDataset = '/WtoLNu-4Jets_TuneCP5_13p6TeV_madgraphMLM-pythia8/Run3Summer22MiniAODv4-130X_mcRun3_2022_realistic_v5_ext1-v2/MINIAODSIM'
 # config.Data.inputDataset = '/WtoLNu-4Jets_TuneCP5_13p6TeV_madgraphMLM-pythia8/Run3Summer22EEMiniAODv4-130X_mcRun3_2022_realistic_postEE_v6-v2/MINIAODSIM'
@@ -54,6 +68,7 @@ config.Data.unitsPerJob = 1 # leave this as one to avoid too much wall time and 
 config.Data.publication = False # CRAB can't publish more than one dataset per task; set publication as false when using multiple channels
 config.Data.outputDatasetTag = 'allMuonPt_TrigAnalysis_Muon2023' + dataera # this is just an example; it will be part of the name of the output dataset
 # config.Data.outputDatasetTag = 'allMuonPt_TrigAnalysis_WToLNu2023' + dataera # this is just an example; it will be part of the name of the output dataset
+# config.Data.outputDatasetTag = 'TrigAnalysis_Muon2024' + dataera # this is just an example; it will be part of the name of the output dataset
 
 config.Data.outLFNDirBase = '/store/user/borzari/'
 config.Site.storageSite = 'T2_BR_SPRACE'
