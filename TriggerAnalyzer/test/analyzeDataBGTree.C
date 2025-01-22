@@ -18,6 +18,9 @@ void analyzeDataBGTree(){
     std::string year = "2023";
     std::string process = "Muon";
 
+    // std::string year = "2024I";
+    // std::string process = "Muon";
+
     std::string inpFile = "/afs/cern.ch/work/b/borzari/mergeHistos/hist_merged_allMuonPt_TrigAnalysis_" + process + year + ".root";
     std::string outFile = "plots/log_right_" + process + "_" + year + ".root";
     // std::string outFile = "plots/onlytesting.root";
